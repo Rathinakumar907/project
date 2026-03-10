@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}University Coding Platform{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">{'{}'}UniCode Platform{'}'}</a>
+        <div id="nav-actions">
+            <!-- Populated by JS -->
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Main Content -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Modals (like Cheat Warning) -->
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/anti-cheat.js?v=2"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

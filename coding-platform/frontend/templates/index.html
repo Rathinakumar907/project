@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Login - UniCode Platform{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="glass-panel auth-card">
+        <div id="login-view">
+            <h2>Sign In</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Welcome back to the assessment portal.</p>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="login-email" class="form-control" required
+                        placeholder="student@university.edu">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="login-pass" class="form-control" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">Login</button>
+            </form>
+
+            <p style="text-align: center; margin-top: 16px; font-size: 14px;">
+                Don't have an account? <a href="#" onclick="toggleAuthView(event)">Register here</a>
+            </p>
+        </div>
+
+        <div id="register-view" style="display: none;">
+            <h2>Register</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 24px;">Create a new student or professor account.</p>
+
+            <form id="register-form">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="reg-name" class="form-control" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="reg-email" class="form-control" required placeholder="john@university.edu">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">University ID</label>
+                    <input type="text" id="reg-unid" class="form-control" required placeholder="UNV-12345">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="reg-pass" class="form-control" required placeholder="••••••••">
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="reg-isprof">
+                    <label for="reg-isprof" style="font-size: 14px;">I am a Professor</label>
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 8px;">Create
+                    Account</button>
+            </form>
+
+            <p style="text-align: center; margin-top: 16px; font-size: 14px;">
+                Already have an account? <a href="#" onclick="toggleAuthView(event)">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

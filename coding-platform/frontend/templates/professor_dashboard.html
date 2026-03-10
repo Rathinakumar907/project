@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Professor Dashboard{% endblock %}
+
+{% block content %}
+<div class="glass-panel" style="margin-bottom: 24px;">
+    <h2>Professor Control Panel</h2>
+    <p>Manage assignments, view student progress, and analyze plagiarism reports.</p>
+</div>
+
+<div class="grid-cards">
+    <!-- Problem Management -->
+    <div class="glass-panel" style="grid-column: span 2;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3>My Problems</h3>
+            <button class="btn btn-primary" onclick="toggleProblemForm()">+ Create Problem</button>
+        </div>
+
+        <div id="create-problem-form"
+            style="display: none; background: #010409; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border-color);">
+            <h4>New Assignment</h4>
+            <div class="form-group">
+                <input type="text" id="p-title" class="form-control" placeholder="Problem Title" required>
+            </div>
+            <div class="form-group" style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <input type="file" id="pdf-upload" class="form-control" accept="application/pdf"
+                    style="width: auto; flex: 1;">
+                <button class="btn btn-secondary" onclick="extractFromPDF()"
+                    style="background: var(--glass-border); color: white;">Extract from PDF</button>
+            </div>
+            <div class="form-group">
+                <textarea id="p-desc" class="form-control" rows="3" placeholder="Problem Description"
+                    required></textarea>
+            </div>
+            <div class="form-group">
+                <select id="p-diff" class="form-control">
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                </select>
+            </div>
+
+            <h5>Test Cases</h5>
+            <div id="testcases-container">
+                <div class="testcase-row form-group" style="display: flex; gap: 8px;">
+                    <input type="text" class="form-control tc-in" placeholder="Input Data">
+                    <input type="text" class="form-control tc-out" placeholder="Expected Output">
+                </div>
+            </div>
+            <button class="btn" style="background: var(--bg-color-secondary); color: white;"
+                onclick="addTestCaseRow()">+ Add Test Case</button>
+
+            <div style="margin-top: 16px;">
+                <button class="btn btn-success" onclick="submitProblem()">Save Problem</button>
+                <button class="btn" onclick="toggleProblemForm()" style="color: white">Cancel</button>
+            </div>
+        </div>
+
+        <table class="table" id="prof-problems-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Difficulty</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Populated via JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Analytics Placeholder -->
+    <div class="glass-panel">
+        <h3>Class Overview</h3>
+        <p style="color: var(--text-secondary); margin-top: 16px;">Select a problem from the left to view submissions
+            and run Plagiarism Analytics.</p>
+
+        <div id="submissions-panel" style="display: none; margin-top: 24px;">
+            <h4 style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px;" id="sub-title">Submissions
+            </h4>
+            <ul id="sub-list"
+                style="list-style: none; padding: 0; margin-top: 16px; max-height: 300px; overflow-y: auto;">
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    let editingProblemId = null;
+
+    function toggleProblemForm(forceClose = false) {
+        const f = document.getElementById("create-problem-form");
+        if (forceClose || f.style.display === "block") {
+            f.style.display = "none";
+            document.getElementById("p-title").value = "";
+            document.getElementById("p-desc").value = "";
+            document.getElementById("p-diff").value = "Easy";
+            document.getElementById("testcases-container").innerHTML = `
+                <div class="testcase-row form-group" style="display: flex; gap: 8px;">
+                    <input type="text" class="form-control tc-in" placeholder="Input Data">
+                    <input type="text" class="form-control tc-out" placeholder="Expected Output">
+                    <button class="btn btn-danger" style="padding: 4px 12px; height: 38px;" onclick="this.parentElement.remove()" title="Remove Test Case">X</button>
+                </div>
+            `;
+            editingProblemId = null;
+        } else {
+            f.style.display = "block";
+        }
+    }
+
+    async function extractFromPDF() {
+        const fileInput = document.getElementById("pdf-upload");
+        if (!fileInput.files.length) {
+            alert("Please select a PDF file first.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        const uploadBtn = event.target;
+        const originalText = uploadBtn.innerText;
+        uploadBtn.innerText = "Extracting...";
+        uploadBtn.disabled = true;
+
+        try {
+            const token = localStorage.getItem("token");
+            const res = await fetch(`${API_BASE}/professor/upload-pdf`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (res && res.ok) {
+                const data = await res.json();
+                document.getElementById("p-desc").value = data.extracted_text;
+            } else {
+                const err = await res.json();
+                alert(`Failed to extract text: ${err.detail}`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Network error during PDF extraction.");
+        } finally {
+            uploadBtn.innerText = originalText;
+            uploadBtn.disabled = false;
+        }
+    }
+
+    function addTestCaseRow() {
+        const container = document.getElementById("testcases-container");
+        container.innerHTML += `
+        <div class="testcase-row form-group" style="display: flex; gap: 8px; margin-top: 8px;">
+            <input type="text" class="form-control tc-in" placeholder="Input Data">
+            <input type="text" class="form-control tc-out" placeholder="Expected Output">
+            <button class="btn btn-danger" style="padding: 4px 12px; height: 38px;" onclick="this.parentElement.remove()" title="Remove Test Case">X</button>
+        </div>
+    `;
+    }
+
+    async function submitProblem() {
+        const title = document.getElementById("p-title").value;
+        const desc = document.getElementById("p-desc").value;
+        const diff = document.getElementById("p-diff").value;
+
+        const tcRows = document.querySelectorAll(".testcase-row");
+        const testcases = [];
+        tcRows.forEach(r => {
+            const i = r.querySelector(".tc-in").value;
+            const o = r.querySelector(".tc-out").value;
+            if (i || o) { testcases.push({ input_data: i, expected_output: o }); }
+        });
+
+        if (!title || testcases.length === 0) {
+            alert("Please fill title and add at least one testcase.");
+            return;
+        }
+
+        const payload = {
+            title: title,
+            description: desc,
+            difficulty: diff,
+            testcases: testcases
+        };
+
+        let method = "POST";
+        let url = `${API_BASE}/professor/problems`;
+
+        if (editingProblemId) {
+            method = "PUT";
+            url += `/${editingProblemId}`;
+        }
+
+        const res = await authFetch(url, {
+            method: method,
+            body: JSON.stringify(payload)
+        });
+
+        if (res && res.ok) {
+            alert(`Problem ${editingProblemId ? "updated" : "created"}!`);
+            window.location.reload();
+        } else {
+            alert(`Failed to ${editingProblemId ? "update" : "create"} problem.`);
+        }
+    }
+
+    async function editProblem(problemId) {
+        editingProblemId = problemId;
+        const res = await authFetch(`${API_BASE}/professor/problems/${problemId}`);
+        if (res && res.ok) {
+            const data = await res.json();
+            document.getElementById("p-title").value = data.title;
+            document.getElementById("p-desc").value = data.description;
+            document.getElementById("p-diff").value = data.difficulty;
+
+            const container = document.getElementById("testcases-container");
+            container.innerHTML = "";
+            if (data.testcases && data.testcases.length > 0) {
+                data.testcases.forEach(tc => {
+                    container.innerHTML += `
+                    <div class="testcase-row form-group" style="display: flex; gap: 8px; margin-top: 8px;">
+                        <input type="text" class="form-control tc-in" value="${tc.input_data.replace(/"/g, '&quot;')}" placeholder="Input Data">
+                        <input type="text" class="form-control tc-out" value="${tc.expected_output.replace(/"/g, '&quot;')}" placeholder="Expected Output">
+                        <button class="btn btn-danger" style="padding: 4px 12px; height: 38px;" onclick="this.parentElement.remove()" title="Remove Test Case">X</button>
+                    </div>`;
+                });
+            } else {
+                addTestCaseRow(); // empty row
+            }
+
+            // Open form but scroll to top
+            const f = document.getElementById("create-problem-form");
+            f.style.display = "block";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        } else {
+            alert("Failed to load problem details.");
+            editingProblemId = null;
+        }
+    }
+
+    async function deleteProblem(problemId) {
+        if (!confirm("Are you sure you want to delete this problem and all its submissions?")) {
+            return;
+        }
+
+        const res = await authFetch(`${API_BASE}/professor/problems/${problemId}`, {
+            method: "DELETE"
+        });
+
+        if (res && res.ok) {
+            alert("Problem deleted successfully.");
+            window.location.reload();
+        } else {
+            alert("Failed to delete problem.");
+        }
+    }
+
+    async function loadSubmissions(problemId) {
+        const panel = document.getElementById("submissions-panel");
+        const title = document.getElementById("sub-title");
+        const list = document.getElementById("sub-list");
+
+        panel.style.display = "block";
+        title.innerText = `Submissions for Problem #${problemId}`;
+        list.innerHTML = "Loading...";
+
+        const res = await authFetch(`${API_BASE}/professor/submissions/${problemId}`);
+        if (res && res.ok) {
+            const subs = await res.json();
+            list.innerHTML = "";
+
+            if (subs.length === 0) {
+                list.innerHTML = "<li>No submissions yet.</li>";
+                return;
+            }
+
+            subs.forEach(s => {
+                let color = s.result === 'Accepted' ? 'var(--success)' : 'var(--danger)';
+                let simFlag = s.similarity_score > 80 ? `<span style="color:var(--danger); font-weight:bold">[Plagiarism Alert: ${s.similarity_score}%]</span>` : "";
+
+                let displayName = s.user ? `${s.user.name} (${s.user.university_id})` : `User #${s.user_id}`;
+
+                list.innerHTML += `
+                <li style="padding: 12px; background: rgba(255,255,255,0.02); margin-bottom: 8px; border-radius: 4px; border-left: 3px solid ${color};">
+                    <div style="font-weight: 500;">${displayName} - <span style="color: ${color}">${s.result}</span></div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                        Lang: ${s.language} | Time: ${s.execution_time} ${simFlag}
+                    </div>
+                </li>
+            `;
+            });
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        const res = await authFetch(`${API_BASE}/professor/problems`);
+        if (res && res.ok) {
+            const problems = await res.json();
+            const tbody = document.querySelector("#prof-problems-table tbody");
+
+            if (problems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4">No problems created yet.</td></tr>`;
+            } else {
+                problems.forEach(p => {
+                    let badgeClass = p.difficulty.toLowerCase() === 'easy' ? 'badge-easy' :
+                        p.difficulty.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
+
+                    tbody.innerHTML += `
+                    <tr>
+                        <td>#${p.id}</td>
+                        <td style="font-weight: 500;">${p.title}</td>
+                        <td><span class="badge ${badgeClass}">${p.difficulty}</span></td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--glass-border);" onclick="editProblem(${p.id})">Edit</button>
+                            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;" onclick="loadSubmissions(${p.id})">Submissions</button>
+                            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; background: var(--danger); border-color: var(--danger);" onclick="deleteProblem(${p.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                });
+            }
+        }
+    });
+</script>
+{% endblock %}
