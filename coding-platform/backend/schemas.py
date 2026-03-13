@@ -50,6 +50,7 @@ class ProblemCreate(BaseModel):
     title: str
     description: str
     difficulty: str
+    reference_solution: Optional[str] = None
     testcases: List[TestCaseCreate]
 
 class ProblemResponse(BaseModel):
@@ -57,6 +58,7 @@ class ProblemResponse(BaseModel):
     title: str
     description: str
     difficulty: str
+    reference_solution: Optional[str] = None
     created_by: int
     created_at: datetime
     testcases: List[TestCaseResponse] = []
@@ -93,6 +95,10 @@ class SubmissionResponse(BaseModel):
     language: str
     code: str
     result: str
+    status: Optional[str] = None
+    score: int
+    passed_testcases: Optional[int] = 0
+    total_testcases: Optional[int] = 0
     execution_time: str
     similarity_score: Optional[int]
     created_at: datetime
@@ -102,3 +108,49 @@ class SubmissionResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+# --- Student Profile ---
+class ProblemProgressItem(BaseModel):
+    problem_id: int
+    title: str
+    difficulty: str
+    best_score: int
+    attempt_count: int
+    best_status: str
+
+class StudentProfileResponse(BaseModel):
+    user_id: int
+    name: str
+    university_id: str
+    total_marks: int
+    attempted_problems: List[ProblemProgressItem]
+
+
+# --- Professor Analytics ---
+class ProblemMeta(BaseModel):
+    id: int
+    title: str
+    difficulty: str
+
+class StudentMarksRow(BaseModel):
+    user_id: int
+    name: str
+    university_id: str
+    marks: dict          # {problem_id (str): score}
+    total: int
+
+class ProfessorAnalyticsResponse(BaseModel):
+    problems: List[ProblemMeta]
+    students: List[StudentMarksRow]
+
+
+# --- Real-time submission result ---
+class SubmissionResult(BaseModel):
+    status: str
+    score: int
+    passed_testcases: int
+    total_testcases: int
+    message: str
+    execution_time: str
+    submission_id: int

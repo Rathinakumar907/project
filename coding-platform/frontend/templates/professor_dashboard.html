@@ -40,6 +40,12 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <h5>Reference Solution (Python)</h5>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Used for partial marking and logical similarity checking.</p>
+                <textarea id="p-ref" class="form-control" rows="5" placeholder="Paste the ideal solution here..." style="font-family: monospace;"></textarea>
+            </div>
+
             <h5>Test Cases</h5>
             <div id="testcases-container">
                 <div class="testcase-row form-group" style="display: flex; gap: 8px;">
@@ -87,6 +93,17 @@
     </div>
 </div>
 
+<!-- Analytics Matrix Section -->
+<div class="glass-panel" style="margin-top:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3>📈 Class Analytics — Marks Matrix</h3>
+        <button class="btn btn-primary" style="padding:6px 14px; font-size:13px;" onclick="loadAnalytics()">Refresh</button>
+    </div>
+    <div id="analytics-container" style="overflow-x:auto;">
+        <p style="color:var(--text-secondary);">Loading analytics...</p>
+    </div>
+</div>
+
 <script>
     let editingProblemId = null;
 
@@ -97,6 +114,7 @@
             document.getElementById("p-title").value = "";
             document.getElementById("p-desc").value = "";
             document.getElementById("p-diff").value = "Easy";
+            document.getElementById("p-ref").value = "";
             document.getElementById("testcases-container").innerHTML = `
                 <div class="testcase-row form-group" style="display: flex; gap: 8px;">
                     <input type="text" class="form-control tc-in" placeholder="Input Data">
@@ -166,6 +184,7 @@
         const title = document.getElementById("p-title").value;
         const desc = document.getElementById("p-desc").value;
         const diff = document.getElementById("p-diff").value;
+        const ref = document.getElementById("p-ref").value;
 
         const tcRows = document.querySelectorAll(".testcase-row");
         const testcases = [];
@@ -184,6 +203,7 @@
             title: title,
             description: desc,
             difficulty: diff,
+            reference_solution: ref,
             testcases: testcases
         };
 
@@ -216,6 +236,7 @@
             document.getElementById("p-title").value = data.title;
             document.getElementById("p-desc").value = data.description;
             document.getElementById("p-diff").value = data.difficulty;
+            document.getElementById("p-ref").value = data.reference_solution || "";
 
             const container = document.getElementById("testcases-container");
             container.innerHTML = "";
@@ -255,7 +276,12 @@
             alert("Problem deleted successfully.");
             window.location.reload();
         } else {
-            alert("Failed to delete problem.");
+            try {
+                const err = await res.json();
+                alert("Failed to delete problem: " + (err.detail || "Unknown error"));
+            } catch {
+                alert("Failed to delete problem (status " + res.status + ").");
+            }
         }
     }
 
@@ -324,6 +350,67 @@
                 });
             }
         }
+
+        // Load analytics matrix on page load
+        await loadAnalytics();
     });
+
+    async function loadAnalytics() {
+        const container = document.getElementById("analytics-container");
+        container.innerHTML = `<p style="color:var(--text-secondary);">Loading...</p>`;
+
+        const res = await authFetch(`${API_BASE}/professor/analytics`);
+        if (!res || !res.ok) {
+            container.innerHTML = `<p style="color:var(--danger);">Failed to load analytics.</p>`;
+            return;
+        }
+        const data = await res.json();
+
+        if (!data.students || data.students.length === 0) {
+            container.innerHTML = `<p style="color:var(--text-secondary);">No student submissions yet.</p>`;
+            return;
+        }
+
+        // Build table header
+        let headerCols = data.problems.map(p =>
+            `<th title="Problem #${p.id}" style="min-width:90px; text-align:center; font-size:12px;">${p.title}<br><span style="color:var(--text-secondary);font-weight:normal;">#${p.id}</span></th>`
+        ).join("");
+
+        let tableHtml = `
+        <table class="table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>ID</th>
+                    ${headerCols}
+                    <th style="text-align:center; color:#6366f1;">Total</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        data.students.forEach(student => {
+            let markCols = data.problems.map(p => {
+                let score = student.marks[p.id] !== undefined ? student.marks[p.id] : 0;
+                let cellColor = score === 100 ? '#10b981' :
+                    score >= 50 ? '#f59e0b' :
+                    score > 0  ? '#ef4444' : 'var(--text-secondary)';
+                let bg = score === 100 ? 'rgba(16,185,129,0.1)' :
+                    score >= 50 ? 'rgba(245,158,11,0.1)' :
+                    score > 0  ? 'rgba(239,68,68,0.1)' : 'transparent';
+                return `<td style="text-align:center; font-weight:bold; color:${cellColor}; background:${bg};">${score > 0 ? score : '—'}</td>`;
+            }).join("");
+
+            tableHtml += `
+            <tr>
+                <td style="font-weight:500;">${student.name}</td>
+                <td style="color:var(--text-secondary); font-size:13px;">${student.university_id}</td>
+                ${markCols}
+                <td style="text-align:center; font-weight:bold; background:rgba(99,102,241,0.1); color:#6366f1;">${student.total}</td>
+            </tr>`;
+        });
+
+        tableHtml += `</tbody></table>`;
+        container.innerHTML = tableHtml;
+    }
 </script>
 {% endblock %}

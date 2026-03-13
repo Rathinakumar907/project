@@ -165,12 +165,22 @@
                 const statusEl = document.getElementById("result-status");
                 const detailsEl = document.getElementById("result-details");
 
-                statusEl.innerText = `Result: ${result.result}`;
-                statusEl.style.color = result.result === "Accepted" ? "var(--success)" : "var(--danger)";
+                const displayStatus = result.status === "evaluated"
+                    ? (result.score === 100 ? "Accepted" : result.score > 0 ? "Partial" : "Wrong Answer")
+                    : result.status;
+
+                statusEl.innerText = `Result: ${displayStatus}`;
+                statusEl.style.color = displayStatus === "Accepted"
+                    ? "var(--success)"
+                    : displayStatus === "Partial"
+                        ? "var(--warning)"
+                        : "var(--danger)";
 
                 let detailsHtml = `Execution Time: ${result.execution_time}\n`;
-                if (result.result !== "Accepted") {
-                    detailsHtml += `\nFailed at Testcase #${result.failed_testcase}\nDetails: ${result.error_details || "N/A"}`;
+                detailsHtml += `Score: ${result.score}%\n`;
+                detailsHtml += `Test Cases Passed: ${result.passed_testcases} / ${result.total_testcases}\n`;
+                if (result.message) {
+                    detailsHtml += `\n${result.message}`;
                 }
                 detailsEl.innerText = detailsHtml;
             } else {

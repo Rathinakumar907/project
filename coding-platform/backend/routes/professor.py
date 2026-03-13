@@ -4,6 +4,7 @@ from typing import List
 import io
 import PyPDF2
 from .. import database, models, schemas, security
+from ..grading import professor_dashboard as prof_helpers
 
 router = APIRouter(
     prefix="/api/professor",
@@ -20,6 +21,7 @@ def create_problem(
         title=problem.title,
         description=problem.description,
         difficulty=problem.difficulty,
+        reference_solution=problem.reference_solution,
         created_by=current_user.id
     )
     
@@ -78,6 +80,7 @@ def update_problem(
     problem.title = problem_data.title
     problem.description = problem_data.description
     problem.difficulty = problem_data.difficulty
+    problem.reference_solution = problem_data.reference_solution
     
     # Delete old test cases
     db.query(models.TestCase).filter(models.TestCase.problem_id == problem.id).delete()
@@ -104,9 +107,8 @@ def delete_problem(
     problem = db.query(models.Problem).filter(models.Problem.id == problem_id).first()
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
-    if problem.created_by != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this problem")
 
+    # Any professor can delete any problem (ownership not required)
     # Due to cascade="all, delete-orphan", testcases and submissions will be deleted automatically
     db.delete(problem)
     db.commit()
@@ -158,14 +160,24 @@ async def extract_pdf_content(
 ):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
-        
+
     try:
         contents = await file.read()
         pdf_reader = PyPDF2.PdfReader(io.BytesIO(contents))
         extracted_text = ""
         for page in pdf_reader.pages:
             extracted_text += page.extract_text() + "\n"
-            
         return {"extracted_text": extracted_text.strip()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse PDF: {str(e)}")
+
+@router.get("/analytics")
+def get_analytics(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_professor)
+):
+    """
+    Returns a matrix of student x problem marks for the professor analytics panel.
+    Response: { problems: [...], students: [{name, marks:{pid:score}, total}, ...] }
+    """
+    return prof_helpers.get_all_student_marks(db)

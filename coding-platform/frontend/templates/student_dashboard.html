@@ -5,9 +5,11 @@
 {% block content %}
 <div class="glass-panel" style="margin-bottom: 24px;">
     <h2>Welcome to your Dashboard</h2>
-    <p>Select a problem below to begin coding. Your activities are monitored by UniCode Platform anti-cheat services.
-    </p>
+    <p>Select a problem below to begin coding. Your activities are monitored by UniCode Platform anti-cheat services.</p>
 </div>
+
+<!-- Progress Summary Cards -->
+<div id="progress-cards" style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;"></div>
 
 <div class="grid-cards">
     <!-- Problems List -->
@@ -45,9 +47,33 @@
     </div>
 </div>
 
+<!-- My Progress Section -->
+<div class="glass-panel" style="margin-top: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3>📊 My Progress</h3>
+        <span id="total-marks-badge" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 14px;">Total: — marks</span>
+    </div>
+    <table class="table" id="progress-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Problem</th>
+                <th>Difficulty</th>
+                <th>Best Score</th>
+                <th>Status</th>
+                <th>Attempts</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="7" style="color: var(--text-secondary);">Loading your progress...</td></tr>
+        </tbody>
+    </table>
+</div>
+
 <script>
     document.addEventListener("DOMContentLoaded", async () => {
-        // Load problems
+        // ── Load available problems ──────────────────────────────────────────
         const problemsRes = await authFetch(`${API_BASE}/student/problems`);
         if (problemsRes && problemsRes.ok) {
             const problems = await problemsRes.json();
@@ -59,24 +85,21 @@
                 problems.forEach(p => {
                     let badgeClass = p.difficulty.toLowerCase() === 'easy' ? 'badge-easy' :
                         p.difficulty.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
-
                     tbody.innerHTML += `
                     <tr>
                         <td style="font-weight: 500;">${p.title}</td>
                         <td><span class="badge ${badgeClass}">${p.difficulty}</span></td>
                         <td><a href="/student/coding/${p.id}" class="btn btn-primary" style="padding: 6px 12px; display: inline-block;">Solve</a></td>
-                    </tr>
-                `;
+                    </tr>`;
                 });
             }
         }
 
-        // Load leaderboard
+        // ── Load leaderboard ─────────────────────────────────────────────────
         const lbRes = await authFetch(`${API_BASE}/student/leaderboard`);
         if (lbRes && lbRes.ok) {
             const lb = await lbRes.json();
             const lbody = document.querySelector("#leaderboard-table tbody");
-
             if (lb.length === 0) {
                 lbody.innerHTML = `<tr><td colspan="3">No rankings yet.</td></tr>`;
             } else {
@@ -86,8 +109,70 @@
                         <td>#${index + 1}</td>
                         <td>${user.name} <br><small style="color: var(--text-secondary)">${user.university_id}</small></td>
                         <td style="font-weight: bold; color: var(--success);">${user.solved_count}</td>
-                    </tr>
-                `;
+                    </tr>`;
+                });
+            }
+        }
+
+        // ── Load student profile / marks ─────────────────────────────────────
+        const profileRes = await authFetch(`${API_BASE}/student/profile`);
+        if (profileRes && profileRes.ok) {
+            const profile = await profileRes.json();
+            const ptbody = document.querySelector("#progress-table tbody");
+
+            // Summary cards
+            const cardsEl = document.getElementById("progress-cards");
+            const attempted = profile.attempted_problems.length;
+            const solved = profile.attempted_problems.filter(p => p.best_status === "Accepted").length;
+            cardsEl.innerHTML = `
+                <div class="glass-panel" style="flex:1; min-width:140px; text-align:center; padding:16px;">
+                    <div style="font-size:28px; font-weight:bold; color: #6366f1;">${profile.total_marks}</div>
+                    <div style="color: var(--text-secondary); font-size:13px; margin-top:4px;">Total Marks</div>
+                </div>
+                <div class="glass-panel" style="flex:1; min-width:140px; text-align:center; padding:16px;">
+                    <div style="font-size:28px; font-weight:bold; color: var(--success);">${solved}</div>
+                    <div style="color: var(--text-secondary); font-size:13px; margin-top:4px;">Solved</div>
+                </div>
+                <div class="glass-panel" style="flex:1; min-width:140px; text-align:center; padding:16px;">
+                    <div style="font-size:28px; font-weight:bold; color: #f59e0b;">${attempted}</div>
+                    <div style="color: var(--text-secondary); font-size:13px; margin-top:4px;">Attempted</div>
+                </div>
+            `;
+
+            document.getElementById("total-marks-badge").textContent = `Total: ${profile.total_marks} marks`;
+
+            if (profile.attempted_problems.length === 0) {
+                ptbody.innerHTML = `<tr><td colspan="7" style="color: var(--text-secondary);">No submissions yet. Go solve some problems!</td></tr>`;
+            } else {
+                ptbody.innerHTML = "";
+                profile.attempted_problems.forEach((p, idx) => {
+                    let statusColor = p.best_status === 'Accepted' ? 'var(--success)' :
+                        p.best_status === 'Partial' ? '#f59e0b' : 'var(--danger)';
+                    let statusIcon = p.best_status === 'Accepted' ? '✅' :
+                        p.best_status === 'Partial' ? '⚡' : '❌';
+                    let scoreBar = `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="flex:1; background: rgba(255,255,255,0.05); border-radius:4px; height:6px; overflow:hidden;">
+                                <div style="width:${p.best_score}%; height:100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius:4px; 
+                                    ${p.best_score === 100 ? 'background: linear-gradient(90deg, #10b981, #059669);' : ''}
+                                    ${p.best_score === 0 ? 'background: #ef4444;' : ''}
+                                "></div>
+                            </div>
+                            <span style="font-weight:bold; color:${statusColor}; min-width:35px;">${p.best_score}</span>
+                        </div>`;
+                    let diffBadge = p.difficulty.toLowerCase() === 'easy' ? 'badge-easy' :
+                        p.difficulty.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
+
+                    ptbody.innerHTML += `
+                    <tr>
+                        <td style="color: var(--text-secondary);">${idx + 1}</td>
+                        <td style="font-weight:500;">${p.title}</td>
+                        <td><span class="badge ${diffBadge}">${p.difficulty}</span></td>
+                        <td style="min-width:120px;">${scoreBar}</td>
+                        <td><span style="color:${statusColor};">${statusIcon} ${p.best_status}</span></td>
+                        <td style="color: var(--text-secondary);">${p.attempt_count}</td>
+                        <td><a href="/student/coding/${p.problem_id}" class="btn btn-primary" style="padding:4px 10px; font-size:12px;">Retry</a></td>
+                    </tr>`;
                 });
             }
         }

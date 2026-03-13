@@ -2,7 +2,7 @@ import subprocess
 import os
 import uuid
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 # Local execution fallback (no docker)
 LANGUAGE_CONFIG = {
@@ -122,9 +122,36 @@ def run_code_locally(code: str, language: str, input_data: str, timeout_seconds:
             
     return result_dict
 
-def evaluate_submission(code: str, language: str, testcases: list) -> Dict[str, Any]:
+from .grading.partial_grader import PartialGrader
+
+def evaluate_submission(code: str, language: str, testcases: list, reference_code: Optional[str] = None) -> Dict[str, Any]:
     max_time = 0
     
+    # If Python and reference code is provided, use partial grader
+    if language == "python" and reference_code:
+        formatted_testcases = [{"input": tc.input_data, "expected": tc.expected_output} for tc in testcases]
+        partial_res = PartialGrader.grade(code, reference_code, formatted_testcases)
+
+        total_tc = len(formatted_testcases)
+        score = partial_res["score"]
+        # Estimate passed test cases from score percentage
+        passed_tc = round((score / 100) * total_tc) if total_tc > 0 else 0
+
+        error_msg = partial_res["message"]
+        if partial_res.get("syntax_error") and partial_res.get("syntax_error_details"):
+            error_msg += "\n" + str(partial_res["syntax_error_details"])
+
+        return {
+            "result": partial_res["status"].title(),
+            "execution_time": "0ms",
+            "score": score,
+            "passed_testcases": passed_tc,
+            "total_testcases": total_tc,
+            "failed_testcase": None if partial_res["status"] == "accepted" else 1,
+            "error_details": error_msg,
+        }
+
+    # Fallback/Other languages (old logic)
     for idx, tc in enumerate(testcases):
         res = run_code_locally(code, language, tc.input_data)
         max_time = max(max_time, res["execution_time"])
@@ -132,6 +159,7 @@ def evaluate_submission(code: str, language: str, testcases: list) -> Dict[str, 
         if res["status"] != "Accepted":
             return {
                 "result": res["status"],
+                "score": 0,
                 "execution_time": f"{max_time}ms",
                 "failed_testcase": idx + 1,
                 "error_details": res["output"][:200]
@@ -143,6 +171,7 @@ def evaluate_submission(code: str, language: str, testcases: list) -> Dict[str, 
         if actual_output != expected_out:
             return {
                 "result": "Wrong Answer",
+                "score": 0,
                 "execution_time": f"{max_time}ms",
                 "failed_testcase": idx + 1,
                 "error_details": f"Expected: {expected_out[:50]}... Got: {actual_output[:50]}..."
@@ -150,6 +179,7 @@ def evaluate_submission(code: str, language: str, testcases: list) -> Dict[str, 
             
     return {
         "result": "Accepted",
+        "score": 100,
         "execution_time": f"{max_time}ms",
         "failed_testcase": None,
         "error_details": ""
