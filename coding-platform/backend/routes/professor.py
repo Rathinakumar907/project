@@ -22,6 +22,7 @@ def create_problem(
         description=problem.description,
         difficulty=problem.difficulty,
         reference_solution=problem.reference_solution,
+        max_marks=problem.max_marks,
         created_by=current_user.id
     )
     
@@ -81,6 +82,7 @@ def update_problem(
     problem.description = problem_data.description
     problem.difficulty = problem_data.difficulty
     problem.reference_solution = problem_data.reference_solution
+    problem.max_marks = problem_data.max_marks
     
     # Delete old test cases
     db.query(models.TestCase).filter(models.TestCase.problem_id == problem.id).delete()

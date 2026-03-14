@@ -14,39 +14,36 @@ from .. import models
 from typing import List, Dict, Any
 
 
-def get_attempted_problems(user_id: int, db: Session) -> List[Dict[str, Any]]:
+def get_attempted_problems(student_id: int, db: Session) -> List[Dict[str, Any]]:
     """
     Returns one entry per attempted problem showing:
-      problem_id, title, difficulty, best_score, attempt_count, best_status
+      problem_id, title, difficulty, best_score (scaled), attempt_count, best_status
     Ordered by problem_id ascending.
     """
-    # Subquery: best score per problem for this student
-    best_scores = (
-        db.query(
-            models.Submission.problem_id,
-            func.max(models.Submission.score).label("best_score"),
-            func.count(models.Submission.id).label("attempt_count"),
-        )
-        .filter(models.Submission.user_id == user_id)
-        .group_by(models.Submission.problem_id)
-        .subquery()
-    )
-
     rows = (
         db.query(
             models.Problem.id,
             models.Problem.title,
             models.Problem.difficulty,
-            best_scores.c.best_score,
-            best_scores.c.attempt_count,
+            models.Problem.max_marks,
+            func.max(models.Submission.score).label("best_score"),
+            # Count distinct sessions. Treat all legacy submissions (NULL session) as ONE single attempt
+            # by coalescing NULL to a constant (e.g., -1).
+            func.count(func.distinct(func.coalesce(models.Submission.exam_session_id, -1))).label("attempt_count"),
         )
-        .join(best_scores, models.Problem.id == best_scores.c.problem_id)
+        .join(models.Submission, models.Problem.id == models.Submission.problem_id)
+        .filter(models.Submission.user_id == student_id)
+        .group_by(models.Problem.id)
         .order_by(models.Problem.id)
         .all()
     )
 
     result = []
     for row in rows:
+        max_m = row.max_marks if row.max_marks else 100
+        # Scale raw 0-100 score to the professor-set max marks
+        scaled_score = round(row.best_score * max_m / 100)
+
         # Determine the status label for the best score
         if row.best_score == 100:
             best_status = "Accepted"
@@ -59,7 +56,8 @@ def get_attempted_problems(user_id: int, db: Session) -> List[Dict[str, Any]]:
             "problem_id": row.id,
             "title": row.title,
             "difficulty": row.difficulty,
-            "best_score": row.best_score,
+            "best_score": scaled_score,
+            "max_marks": max_m,
             "attempt_count": row.attempt_count,
             "best_status": best_status,
         })
@@ -67,21 +65,21 @@ def get_attempted_problems(user_id: int, db: Session) -> List[Dict[str, Any]]:
     return result
 
 
-def get_total_marks(user_id: int, db: Session) -> int:
+def get_total_marks(student_id: int, db: Session) -> int:
     """
-    Sum of the best scores across all attempted problems for this student.
+    Sum of the scaled best scores across all attempted problems for this student.
     """
-    attempted = get_attempted_problems(user_id, db)
+    attempted = get_attempted_problems(student_id, db)
     return sum(p["best_score"] for p in attempted)
 
 
-def get_submission_history(user_id: int, db: Session, limit: int = 20) -> List[models.Submission]:
+def get_submission_history(student_id: int, db: Session, limit: int = 20) -> List[models.Submission]:
     """
     Returns the most recent `limit` submissions for this student.
     """
     return (
         db.query(models.Submission)
-        .filter(models.Submission.user_id == user_id)
+        .filter(models.Submission.user_id == student_id)
         .order_by(models.Submission.created_at.desc())
         .limit(limit)
         .all()

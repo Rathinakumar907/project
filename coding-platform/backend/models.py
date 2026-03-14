@@ -15,6 +15,7 @@ class User(Base):
 
     submissions = relationship("Submission", back_populates="user")
     problems_created = relationship("Problem", back_populates="creator")
+    exam_sessions = relationship("ExamSession", back_populates="user")
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -24,6 +25,7 @@ class Problem(Base):
     description = Column(Text)
     difficulty = Column(String) # Easy, Medium, Hard
     reference_solution = Column(Text, nullable=True) # For partial marking
+    max_marks = Column(Integer, default=100)          # Professor-defined max marks for this problem
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -47,6 +49,7 @@ class Submission(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     problem_id = Column(Integer, ForeignKey("problems.id"))
+    exam_session_id = Column(Integer, ForeignKey("exam_sessions.id"), nullable=True)
     language = Column(String)
     code = Column(Text)
     result = Column(String)              # Accepted, Partial, Wrong Answer, TLE, etc.
@@ -60,3 +63,57 @@ class Submission(Base):
 
     user = relationship("User", back_populates="submissions")
     problem = relationship("Problem", back_populates="submissions")
+    exam_session = relationship("ExamSession", back_populates="submission")
+
+class ExamSession(Base):
+    __tablename__ = "exam_sessions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    problem_id = Column(Integer, ForeignKey("problems.id"))
+    session_token = Column(String, unique=True, index=True)
+    start_time = Column(DateTime, default=datetime.utcnow)
+    end_time = Column(DateTime, nullable=True)
+    status = Column(String, default="active") # active, completed, terminated
+
+    user = relationship("User", back_populates="exam_sessions")
+    problem = relationship("Problem")
+    violations = relationship("Violation", back_populates="session", cascade="all, delete-orphan")
+    behavior_logs = relationship("BehaviorLog", back_populates="session", cascade="all, delete-orphan")
+    submission = relationship("Submission", back_populates="exam_session", uselist=False)
+
+class Violation(Base):
+    __tablename__ = "violations"
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("exam_sessions.id"))
+    event_type = Column(String) # TAB_SWITCH, WINDOW_BLUR, PASTE_ABUSE, VM_DETECTED, etc.
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    metadata_json = Column(Text, nullable=True) # JSON details (renamed from metadata to avoid conflict)
+
+    session = relationship("ExamSession", back_populates="violations")
+
+class BehaviorLog(Base):
+    __tablename__ = "behavior_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("exam_sessions.id"))
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    typing_speed = Column(Integer, nullable=True) # chars per min
+    paste_count = Column(Integer, default=0)
+    paste_size = Column(Integer, default=0)
+    idle_time = Column(Integer, default=0) # seconds
+
+    session = relationship("ExamSession", back_populates="behavior_logs")
+
+class PlagiarismFlag(Base):
+    __tablename__ = "plagiarism_flags"
+    id = Column(Integer, primary_key=True, index=True)
+    submission_1_id = Column(Integer, ForeignKey("submissions.id"))
+    submission_2_id = Column(Integer, ForeignKey("submissions.id"))
+    total_similarity = Column(Integer) # Percentage
+    token_similarity = Column(Integer)
+    ast_similarity = Column(Integer)
+    control_flow_similarity = Column(Integer)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, default="potential") # potential, confirmed, cleared
+
+    submission_1 = relationship("Submission", foreign_keys=[submission_1_id])
+    submission_2 = relationship("Submission", foreign_keys=[submission_2_id])

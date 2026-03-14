@@ -58,11 +58,16 @@ def get_all_student_marks(db: Session) -> Dict[str, Any]:
 
     students_out = []
     problem_ids = [p.id for p in all_problems]
+    # Build max_marks lookup
+    max_marks_map = {p.id: (p.max_marks if p.max_marks else 100) for p in all_problems}
 
     for student in students_db:
         marks = {}
         for pid in problem_ids:
-            marks[pid] = score_map.get(student.id, {}).get(pid, 0)
+            raw = score_map.get(student.id, {}).get(pid, 0)
+            max_m = max_marks_map[pid]
+            # Scale: actual_marks = raw_percent * max_marks / 100
+            marks[pid] = round(raw * max_m / 100)
         total = sum(marks.values())
 
         students_out.append({
@@ -78,7 +83,7 @@ def get_all_student_marks(db: Session) -> Dict[str, Any]:
 
     return {
         "problems": [
-            {"id": p.id, "title": p.title, "difficulty": p.difficulty}
+            {"id": p.id, "title": p.title, "difficulty": p.difficulty, "max_marks": p.max_marks or 100}
             for p in all_problems
         ],
         "students": students_out,

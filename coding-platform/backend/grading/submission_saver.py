@@ -24,6 +24,7 @@ def save_submission(
     total_testcases: int,
     execution_time: str,
     similarity_score: Optional[int] = None,
+    exam_session_id: Optional[int] = None,
 ) -> models.Submission:
     """
     Persists a graded submission to the submissions table.
@@ -41,6 +42,7 @@ def save_submission(
         total_testcases=total_testcases,
         execution_time=execution_time,
         similarity_score=similarity_score,
+        exam_session_id=exam_session_id,
     )
     db.add(new_submission)
     db.commit()

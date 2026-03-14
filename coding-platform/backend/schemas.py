@@ -51,6 +51,7 @@ class ProblemCreate(BaseModel):
     description: str
     difficulty: str
     reference_solution: Optional[str] = None
+    max_marks: int = 100
     testcases: List[TestCaseCreate]
 
 class ProblemResponse(BaseModel):
@@ -59,6 +60,7 @@ class ProblemResponse(BaseModel):
     description: str
     difficulty: str
     reference_solution: Optional[str] = None
+    max_marks: int = 100
     created_by: int
     created_at: datetime
     testcases: List[TestCaseResponse] = []
@@ -116,6 +118,7 @@ class ProblemProgressItem(BaseModel):
     title: str
     difficulty: str
     best_score: int
+    max_marks: int = 100
     attempt_count: int
     best_status: str
 
@@ -132,6 +135,7 @@ class ProblemMeta(BaseModel):
     id: int
     title: str
     difficulty: str
+    max_marks: int = 100
 
 class StudentMarksRow(BaseModel):
     user_id: int
@@ -154,3 +158,29 @@ class SubmissionResult(BaseModel):
     message: str
     execution_time: str
     submission_id: int
+
+# --- Exam Session & Security Schemas ---
+class ExamSessionCreate(BaseModel):
+    problem_id: int
+
+class ExamSessionResponse(BaseModel):
+    id: int
+    user_id: int
+    problem_id: int
+    session_token: str
+    status: str
+    start_time: datetime
+    end_time: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
+
+class ViolationCreate(BaseModel):
+    event_type: str
+    metadata_json: Optional[str] = None
+
+class BehaviorLogCreate(BaseModel):
+    typing_speed: Optional[int] = None
+    paste_count: int = 0
+    paste_size: int = 0
+    idle_time: int = 0

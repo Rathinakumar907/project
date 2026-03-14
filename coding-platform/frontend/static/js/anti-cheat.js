@@ -1,9 +1,16 @@
 // anti-cheat.js
 
-window.initAntiCheat = function () {
-    console.log("Anti-Cheat System Initialized.");
+window.initAntiCheat = function (sessionToken) {
+    console.log("Anti-Cheat System Initialized for session:", sessionToken);
 
     let violationCount = 0;
+    let pasteTimestamps = [];
+
+    // Behavior telemetry state
+    let charCount = 0;
+    let sessionPasteCount = 0;
+    let sessionTotalPasteSize = 0;
+    let lastActive = Date.now();
 
     // Prevent Context Menu (Right Click)
     document.addEventListener("contextmenu", (e) => {
@@ -21,10 +28,21 @@ window.initAntiCheat = function () {
         // Monaco handles paste internally sometimes, but this catches native document-level paste attempts
         const clipboardData = e.clipboardData || window.clipboardData;
         const pastedData = clipboardData.getData('Text');
+        
+        // Track paste frequency
+        const now = Date.now();
+        lastActive = now;
+        pasteTimestamps = pasteTimestamps.filter(ts => now - ts < 60000); // Only keep last 1 minute
+        pasteTimestamps.push(now);
 
-        // Simple heuristic: instant large paste is suspicious
-        if (pastedData.split('\n').length > 10) {
-            e.preventDefault();
+        sessionPasteCount++;
+        sessionTotalPasteSize += pastedData.length;
+
+        if (pasteTimestamps.length > 5) {
+            e.preventDefault(); // Prevent paste if too frequent
+            logViolation("Paste abuse detected (too many pastes in 1 min)", true);
+        } else if (pastedData.split('\n').length > 10) {
+            e.preventDefault(); // Prevent paste if too large
             logViolation(`Large block paste detected (${pastedData.split('\n').length} lines)`, true);
         }
     });
@@ -34,10 +52,29 @@ window.initAntiCheat = function () {
         logViolation("Tab switch or loss of focus detected", true);
     });
 
-    function logViolation(reason, showWarning) {
-        if (violationCount >= 3) return; // Prevent spamming after test conclusion
+    async function logViolation(reason, showWarning) {
+        if (violationCount >= 3) return;
 
-        violationCount++;
+        // --- BACKEND REPORTING ---
+        if (sessionToken) {
+            try {
+                const res = await authFetch(`${API_BASE}/student/exam/violation`, {
+                    method: "POST",
+                    headers: { "X-Exam-Session": sessionToken },
+                    body: JSON.stringify({
+                        event_type: reason,
+                        metadata_json: JSON.stringify({ url: window.location.href, ts: new Date().toISOString() })
+                    })
+                });
+                if (res && res.ok) {
+                    const data = await res.json();
+                    violationCount = data.violation_count;
+                }
+            } catch (err) {
+                console.error("Failed to log violation to backend:", err);
+            }
+        }
+
         console.warn(`[ANTI-CHEAT] Violation #${violationCount}: ${reason}`);
 
         if (showWarning) {
@@ -76,7 +113,74 @@ window.initAntiCheat = function () {
         }
     }
 
-    // Example auto-submission interval or other listeners can go here
+    // Track typing speed and activity
+    document.addEventListener("keydown", () => {
+        charCount++;
+        lastActive = Date.now();
+    });
+
+    document.addEventListener("mousemove", () => {
+        lastActive = Date.now();
+    });
+
+    // Periodically sync behavior telemetry (every 30s)
+    setInterval(async () => {
+        if (!sessionToken) return;
+
+        const idleTime = Math.floor((Date.now() - lastActive) / 1000);
+        const typingSpeed = charCount; // chars per interval
+
+        try {
+            await authFetch(`${API_BASE}/student/exam/behavior`, {
+                method: "POST",
+                headers: { "X-Exam-Session": sessionToken },
+                body: JSON.stringify({
+                    typing_speed: typingSpeed,
+                    paste_count: sessionPasteCount,
+                    paste_size: sessionTotalPasteSize,
+                    idle_time: idleTime
+                })
+            });
+            // Reset interval counters
+            charCount = 0;
+            sessionPasteCount = 0;
+            sessionTotalPasteSize = 0;
+        } catch (err) {
+            console.error("Telemetry sync failed:", err);
+        }
+    }, 30000);
+
+    // Run environment checks immediately
+    (async () => {
+        const suspicious = [];
+        try {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                    if (/llvm|swiftshader|mesa|virtualbox|vmware|parallel|citrix|hyper-v/i.test(renderer + vendor)) {
+                        suspicious.push(`Virtual GPU: ${renderer}`);
+                    }
+                }
+            }
+        } catch (e) { }
+
+        if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 2) {
+            suspicious.push(`Low CPU threads: ${navigator.hardwareConcurrency}`);
+        }
+
+        if (window.screen.availWidth > window.screen.width) {
+            suspicious.push("Multi-monitor detected");
+        }
+
+        if (suspicious.length > 0) {
+            console.warn("[ANTI-CHEAT] Suspicious environment detected:", suspicious);
+            await logViolation(`Environment Alert: ${suspicious.join(', ')}`, false);
+        }
+    })();
 };
 
 function hideCheatWarning() {

@@ -78,6 +78,7 @@
 
 <script>
     let editor;
+    let examSessionToken = null;
     const probId = window.location.pathname.split("/").pop();
 
     require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.40.0/min/vs' } });
@@ -115,8 +116,26 @@
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-        // Enable Anti-Cheat for this specific page
-        window.initAntiCheat();
+        // ── Step 1: Initialize Exam Session ──────────────────────────────────
+        const sessionRes = await authFetch(`${API_BASE}/student/exam/start`, {
+            method: "POST",
+            body: JSON.stringify({ problem_id: parseInt(probId) })
+        });
+        
+        if (sessionRes && sessionRes.ok) {
+            const session = await sessionRes.json();
+            examSessionToken = session.session_token;
+            console.log("Exam session active:", examSessionToken);
+        } else {
+            const errorData = sessionRes.status === 403 ? await sessionRes.json() : null;
+            const message = errorData ? errorData.detail : "Failed to initialize secure exam session.";
+            alert(message);
+            window.location.href = "/student/dashboard";
+            return;
+        }
+
+        // Enable Anti-Cheat for this specific page (Pass the token)
+        window.initAntiCheat(examSessionToken);
 
         const res = await authFetch(`${API_BASE}/student/problems/${probId}`);
         if (res && res.ok) {
@@ -157,6 +176,9 @@
         try {
             const res = await authFetch(`${API_BASE}/student/submit`, {
                 method: "POST",
+                headers: {
+                    "X-Exam-Session": examSessionToken
+                },
                 body: JSON.stringify(payload)
             });
 

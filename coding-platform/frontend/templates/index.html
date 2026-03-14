@@ -17,7 +17,16 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" id="login-pass" class="form-control" required placeholder="••••••••">
+                    <div class="password-container">
+                        <input type="password" id="login-pass" class="form-control" required placeholder="••••••••">
+                        <button type="button" class="password-toggle" id="login-pass-toggle"
+                            onclick="togglePasswordVisibility('login-pass', 'login-pass-toggle')">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">Login</button>
             </form>
@@ -46,7 +55,16 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Password</label>
-                    <input type="password" id="reg-pass" class="form-control" required placeholder="••••••••">
+                    <div class="password-container">
+                        <input type="password" id="reg-pass" class="form-control" required placeholder="••••••••">
+                        <button type="button" class="password-toggle" id="reg-pass-toggle"
+                            onclick="togglePasswordVisibility('reg-pass', 'reg-pass-toggle')">
+                            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" id="reg-isprof">

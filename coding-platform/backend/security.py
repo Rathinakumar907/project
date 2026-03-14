@@ -2,10 +2,11 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from . import database, models, schemas
+from .exam_session_manager import ExamSessionManager
 
 # Secret key for JWT hashing - In production, use env variables
 SECRET_KEY = "super_secret_coding_platform_key_for_university"
@@ -57,3 +58,27 @@ def get_current_professor(current_user: models.User = Depends(get_current_user))
     if current_user.role != "professor":
         raise HTTPException(status_code=403, detail="Not authorized to perform this action")
     return current_user
+
+async def get_exam_session(
+    x_exam_session: str = Header(..., alias="X-Exam-Session"),
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Dependency to ensure the request has a valid, active exam session token
+    matching the current user.
+    """
+    session = ExamSessionManager.get_session_by_token(db, x_exam_session)
+    if not session or session.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Valid and active exam session required. Please start the exam through the dashboard."
+        )
+    
+    if session.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Exam session belongs to a different user."
+        )
+    
+    return session
