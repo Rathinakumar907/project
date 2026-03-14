@@ -29,6 +29,7 @@ class SecureSubmissionHandler:
             submission_data.code,
             submission_data.language,
             testcases,
+            total_marks=problem.total_marks,
             reference_code=problem.reference_solution
         )
         

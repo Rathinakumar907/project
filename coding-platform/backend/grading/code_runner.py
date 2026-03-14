@@ -36,6 +36,7 @@ class CodeRunner:
         return {
             "passed_testcases": passed_count,
             "total_testcases": total_count,
+            "passed_indices": [i for i, r in enumerate(results) if r["passed"]],
             "results": results,
             "all_passed": passed_count == total_count if total_count > 0 else False
         }

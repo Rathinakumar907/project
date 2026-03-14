@@ -35,6 +35,7 @@ class TokenData(BaseModel):
 class TestCaseBase(BaseModel):
     input_data: str
     expected_output: str
+    marks_weight: Optional[int] = 1
 
 class TestCaseCreate(TestCaseBase):
     pass
@@ -51,7 +52,7 @@ class ProblemCreate(BaseModel):
     description: str
     difficulty: str
     reference_solution: Optional[str] = None
-    max_marks: int = 100
+    total_marks: int = 100
     testcases: List[TestCaseCreate]
 
 class ProblemResponse(BaseModel):
@@ -60,7 +61,7 @@ class ProblemResponse(BaseModel):
     description: str
     difficulty: str
     reference_solution: Optional[str] = None
-    max_marks: int = 100
+    total_marks: int = 100
     created_by: int
     created_at: datetime
     testcases: List[TestCaseResponse] = []
@@ -118,7 +119,7 @@ class ProblemProgressItem(BaseModel):
     title: str
     difficulty: str
     best_score: int
-    max_marks: int = 100
+    total_marks: int = 100
     attempt_count: int
     best_status: str
 
@@ -135,7 +136,7 @@ class ProblemMeta(BaseModel):
     id: int
     title: str
     difficulty: str
-    max_marks: int = 100
+    total_marks: int = 100
 
 class StudentMarksRow(BaseModel):
     user_id: int

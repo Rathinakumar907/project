@@ -22,7 +22,7 @@ def create_problem(
         description=problem.description,
         difficulty=problem.difficulty,
         reference_solution=problem.reference_solution,
-        max_marks=problem.max_marks,
+        total_marks=problem.total_marks,
         created_by=current_user.id
     )
     
@@ -35,7 +35,8 @@ def create_problem(
         test_case = models.TestCase(
             problem_id=new_problem.id,
             input_data=tc.input_data,
-            expected_output=tc.expected_output
+            expected_output=tc.expected_output,
+            marks_weight=tc.marks_weight
         )
         db.add(test_case)
     
@@ -82,7 +83,7 @@ def update_problem(
     problem.description = problem_data.description
     problem.difficulty = problem_data.difficulty
     problem.reference_solution = problem_data.reference_solution
-    problem.max_marks = problem_data.max_marks
+    problem.total_marks = problem_data.total_marks
     
     # Delete old test cases
     db.query(models.TestCase).filter(models.TestCase.problem_id == problem.id).delete()
@@ -92,7 +93,8 @@ def update_problem(
         test_case = models.TestCase(
             problem_id=problem.id,
             input_data=tc.input_data,
-            expected_output=tc.expected_output
+            expected_output=tc.expected_output,
+            marks_weight=tc.marks_weight
         )
         db.add(test_case)
 

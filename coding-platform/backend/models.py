@@ -25,7 +25,7 @@ class Problem(Base):
     description = Column(Text)
     difficulty = Column(String) # Easy, Medium, Hard
     reference_solution = Column(Text, nullable=True) # For partial marking
-    max_marks = Column(Integer, default=100)          # Professor-defined max marks for this problem
+    total_marks = Column(Integer, default=100)        # Professor-defined total marks for this problem
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -40,6 +40,7 @@ class TestCase(Base):
     problem_id = Column(Integer, ForeignKey("problems.id"))
     input_data = Column(Text)
     expected_output = Column(Text)
+    marks_weight = Column(Integer, default=1, nullable=True) # Weight of this test case
 
     problem = relationship("Problem", back_populates="testcases")
 

@@ -187,21 +187,22 @@
                 const statusEl = document.getElementById("result-status");
                 const detailsEl = document.getElementById("result-details");
 
-                const displayStatus = result.status === "evaluated"
-                    ? (result.score === 100 ? "Accepted" : result.score > 0 ? "Partial" : "Wrong Answer")
-                    : result.status;
+                const displayStatus = result.status === "evaluated" || result.status === "Partial" || result.status === "Accepted"
+                    ? (result.score >= result.total_marks && result.total_testcases > 0 ? "Accepted" : result.score > 0 ? "Partially Correct" : "Wrong Answer")
+                    : (result.status === "Partially Correct" ? "Partially Correct" : result.status);
 
                 statusEl.innerText = `Result: ${displayStatus}`;
                 statusEl.style.color = displayStatus === "Accepted"
                     ? "var(--success)"
-                    : displayStatus === "Partial"
+                    : displayStatus === "Partially Correct"
                         ? "var(--warning)"
                         : "var(--danger)";
 
                 let detailsHtml = `Execution Time: ${result.execution_time}\n`;
-                detailsHtml += `Score: ${result.score}%\n`;
-                detailsHtml += `Test Cases Passed: ${result.passed_testcases} / ${result.total_testcases}\n`;
-                if (result.message) {
+                detailsHtml += `Score: ${result.score} / ${result.total_marks || 100}\n`;
+                detailsHtml += `Passed Test Cases: ${result.passed_testcases} / ${result.total_testcases}\n`;
+                detailsHtml += `Failed Test Cases: ${result.total_testcases - result.passed_testcases}\n`;
+                if (result.message && result.score < (result.total_marks || 100)) {
                     detailsHtml += `\n${result.message}`;
                 }
                 detailsEl.innerText = detailsHtml;

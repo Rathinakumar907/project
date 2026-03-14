@@ -37,7 +37,7 @@
                 <tr>
                     <th>Rank</th>
                     <th>Student</th>
-                    <th>Solved</th>
+                    <th>Total Score</th>
                 </tr>
             </thead>
             <tbody>
@@ -108,7 +108,7 @@
                     <tr>
                         <td>#${index + 1}</td>
                         <td>${user.name} <br><small style="color: var(--text-secondary)">${user.university_id}</small></td>
-                        <td style="font-weight: bold; color: var(--success);">${user.solved_count}</td>
+                        <td style="font-weight: bold; color: var(--success);">${user.total_score}</td>
                     </tr>`;
                 });
             }
@@ -150,15 +150,16 @@
                         p.best_status === 'Partial' ? '#f59e0b' : 'var(--danger)';
                     let statusIcon = p.best_status === 'Accepted' ? '✅' :
                         p.best_status === 'Partial' ? '⚡' : '❌';
+                    let progressPct = p.total_marks > 0 ? (p.best_score / p.total_marks) * 100 : 0;
                     let scoreBar = `
                         <div style="display:flex; align-items:center; gap:8px;">
                             <div style="flex:1; background: rgba(255,255,255,0.05); border-radius:4px; height:6px; overflow:hidden;">
-                                <div style="width:${p.best_score}%; height:100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius:4px; 
-                                    ${p.best_score === 100 ? 'background: linear-gradient(90deg, #10b981, #059669);' : ''}
-                                    ${p.best_score === 0 ? 'background: #ef4444;' : ''}
+                                <div style="width:${progressPct}%; height:100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius:4px; 
+                                    ${progressPct >= 100 ? 'background: linear-gradient(90deg, #10b981, #059669);' : ''}
+                                    ${progressPct === 0 ? 'background: #ef4444;' : ''}
                                 "></div>
                             </div>
-                            <span style="font-weight:bold; color:${statusColor}; min-width:35px;">${p.best_score}</span>
+                            <span style="font-weight:bold; color:${statusColor}; min-width:35px;">${p.best_score}<small style="color:var(--text-secondary); font-weight:normal;">/${p.total_marks}</small></span>
                         </div>`;
                     let diffBadge = p.difficulty.toLowerCase() === 'easy' ? 'badge-easy' :
                         p.difficulty.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';

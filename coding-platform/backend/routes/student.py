@@ -64,18 +64,27 @@ def get_student_profile(
 @router.get("/leaderboard")
 def get_leaderboard(db: Session = Depends(database.get_db)):
     from sqlalchemy import func
-
-    users_with_accepted = db.query(
+    
+    # Subquery to get the best score for each (user, problem) pair
+    subquery = db.query(
+        models.Submission.user_id,
+        models.Submission.problem_id,
+        func.max(models.Submission.score).label("best_score")
+    ).group_by(models.Submission.user_id, models.Submission.problem_id).subquery()
+    
+    # Join with User table to get names and sum the best scores
+    leaderboard = db.query(
         models.User.name,
         models.User.university_id,
-        func.count(models.Submission.problem_id.distinct()).label("solved_count")
-    ).join(models.Submission).filter(
-        models.Submission.result == "Accepted"
-    ).group_by(models.User.id).order_by(func.count(models.Submission.problem_id.distinct()).desc()).all()
+        func.sum(subquery.c.best_score).label("total_score")
+    ).join(subquery, models.User.id == subquery.c.user_id)\
+     .group_by(models.User.id)\
+     .order_by(func.sum(subquery.c.best_score).desc())\
+     .all()
 
     return [
-        {"name": u.name, "university_id": u.university_id, "solved_count": u.solved_count}
-        for u in users_with_accepted
+        {"name": u.name, "university_id": u.university_id, "total_score": int(u.total_score or 0)}
+        for u in leaderboard
     ]
 
 @router.post("/exam/start", response_model=schemas.ExamSessionResponse)

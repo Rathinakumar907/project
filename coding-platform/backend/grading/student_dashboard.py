@@ -25,7 +25,7 @@ def get_attempted_problems(student_id: int, db: Session) -> List[Dict[str, Any]]
             models.Problem.id,
             models.Problem.title,
             models.Problem.difficulty,
-            models.Problem.max_marks,
+            models.Problem.total_marks,
             func.max(models.Submission.score).label("best_score"),
             # Count distinct sessions. Treat all legacy submissions (NULL session) as ONE single attempt
             # by coalescing NULL to a constant (e.g., -1).
@@ -40,14 +40,13 @@ def get_attempted_problems(student_id: int, db: Session) -> List[Dict[str, Any]]
 
     result = []
     for row in rows:
-        max_m = row.max_marks if row.max_marks else 100
-        # Scale raw 0-100 score to the professor-set max marks
-        scaled_score = round(row.best_score * max_m / 100)
+        total_m = row.total_marks if row.total_marks else 100
+        best_s = row.best_score if row.best_score else 0
 
         # Determine the status label for the best score
-        if row.best_score == 100:
+        if best_s >= total_m:
             best_status = "Accepted"
-        elif row.best_score > 0:
+        elif best_s > 0:
             best_status = "Partial"
         else:
             best_status = "Wrong Answer"
@@ -56,8 +55,8 @@ def get_attempted_problems(student_id: int, db: Session) -> List[Dict[str, Any]]
             "problem_id": row.id,
             "title": row.title,
             "difficulty": row.difficulty,
-            "best_score": scaled_score,
-            "max_marks": max_m,
+            "best_score": best_s,
+            "total_marks": total_m,
             "attempt_count": row.attempt_count,
             "best_status": best_status,
         })

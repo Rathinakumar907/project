@@ -124,13 +124,13 @@ def run_code_locally(code: str, language: str, input_data: str, timeout_seconds:
 
 from .grading.partial_grader import PartialGrader
 
-def evaluate_submission(code: str, language: str, testcases: list, reference_code: Optional[str] = None) -> Dict[str, Any]:
+def evaluate_submission(code: str, language: str, testcases: list, total_marks: int = 100, reference_code: Optional[str] = None) -> Dict[str, Any]:
     max_time = 0
     
     # If Python and reference code is provided, use partial grader
     if language == "python" and reference_code:
-        formatted_testcases = [{"input": tc.input_data, "expected": tc.expected_output} for tc in testcases]
-        partial_res = PartialGrader.grade(code, reference_code, formatted_testcases)
+        formatted_testcases = [{"input": tc.input_data, "expected": tc.expected_output, "weight": getattr(tc, 'marks_weight', 1)} for tc in testcases]
+        partial_res = PartialGrader.grade(code, reference_code, formatted_testcases, total_marks)
 
         total_tc = len(formatted_testcases)
         score = partial_res["score"]
@@ -151,36 +151,52 @@ def evaluate_submission(code: str, language: str, testcases: list, reference_cod
             "error_details": error_msg,
         }
 
-    # Fallback/Other languages (old logic)
+    # Fallback/Other languages (Run ALL test cases)
+    passed_tc = 0
+    total_tc = len(testcases)
+    total_weight = sum(getattr(tc, 'marks_weight', 1) for tc in testcases) or 1
+    passed_weight = 0
+    first_failure = None
+    
     for idx, tc in enumerate(testcases):
         res = run_code_locally(code, language, tc.input_data)
         max_time = max(max_time, res["execution_time"])
         
-        if res["status"] != "Accepted":
-            return {
-                "result": res["status"],
-                "score": 0,
-                "execution_time": f"{max_time}ms",
-                "failed_testcase": idx + 1,
-                "error_details": res["output"][:200]
-            }
-            
-        actual_output = res["output"].strip().replace('\r\n', '\n')
-        expected_out = tc.expected_output.strip().replace('\r\n', '\n')
+        weight = getattr(tc, 'marks_weight', 1)
         
-        if actual_output != expected_out:
-            return {
-                "result": "Wrong Answer",
-                "score": 0,
-                "execution_time": f"{max_time}ms",
-                "failed_testcase": idx + 1,
-                "error_details": f"Expected: {expected_out[:50]}... Got: {actual_output[:50]}..."
-            }
+        if res["status"] == "Accepted":
+            actual_output = res["output"].strip().replace('\r\n', '\n')
+            expected_out = tc.expected_output.strip().replace('\r\n', '\n')
             
+            if actual_output == expected_out:
+                passed_tc += 1
+                passed_weight += weight
+            else:
+                if not first_failure:
+                    first_failure = {
+                        "result": "Wrong Answer",
+                        "failed_testcase": idx + 1,
+                        "error_details": f"Expected: {expected_out[:50]}... Got: {actual_output[:50]}..."
+                    }
+        else:
+            if not first_failure:
+                first_failure = {
+                    "result": res["status"],
+                    "failed_testcase": idx + 1,
+                    "error_details": res["output"][:200]
+                }
+                
+    # Calculate score: (passed_weight / total_weight) * total_marks
+    score = int((passed_weight / total_weight) * total_marks)
+    
+    result_status = "Accepted" if passed_tc == total_tc else ( "Partially Correct" if passed_tc > 0 else (first_failure["result"] if first_failure else "Wrong Answer") )
+
     return {
-        "result": "Accepted",
-        "score": 100,
+        "result": result_status,
+        "score": score,
         "execution_time": f"{max_time}ms",
-        "failed_testcase": None,
-        "error_details": ""
+        "passed_testcases": passed_tc,
+        "total_testcases": total_tc,
+        "failed_testcase": first_failure["failed_testcase"] if first_failure else None,
+        "error_details": first_failure["error_details"] if first_failure else ""
     }

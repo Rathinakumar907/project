@@ -8,68 +8,49 @@ class PartialGrader:
     def grade(
         student_code: str, 
         reference_code: str, 
-        test_cases: List[Dict[str, str]]
+        test_cases: List[Dict[str, Any]],
+        total_marks: int = 100
     ) -> Dict[str, Any]:
         """
-        Grades the student code using partial marking heuristics.
+        Grades the student code using partial marking based on test cases.
         """
         # 1. Syntax Check
         syntax_res = SyntaxChecker.check_syntax(student_code)
         
-        # 2. Logic Similarity Check
+        # 2. Logic Similarity Check (Metadata)
         similarity_score = LogicSimilarity.calculate_similarity(student_code, reference_code)
         attempt_detected = LogicSimilarity.detect_attempt(student_code)
         
-        # 3. Execution (if no critical syntax error, or if we can run it)
-        # Even if there's a syntax error, we might try to run it if we're not sure
-        # but usually syntax error = execution failure.
+        # 3. Execution (Passed indices are now returned by CodeRunner)
         execution_res = CodeRunner.run_test_cases(student_code, test_cases)
         
-        # 4. Scoring Logic
+        # 4. Scoring Logic (Weighted Test Cases)
         total_tc = execution_res["total_testcases"]
         passed_tc = execution_res["passed_testcases"]
+        passed_indices = execution_res.get("passed_indices", [])
         
-        score = 0
-        status = "failed"
-        message = ""
+        total_weight = sum(tc.get("weight", 1) for tc in test_cases) or 1
+        passed_weight = sum(test_cases[i].get("weight", 1) for i in passed_indices)
+
+        # Calculate score: (passed_weight / total_weight) * total_marks
+        score = int((passed_weight / total_weight) * total_marks) if total_tc > 0 else 0
         
-        if total_tc > 0 and passed_tc == total_tc:
-            score = 100
-            status = "accepted"
+        status = "accepted" if passed_tc == total_tc and total_tc > 0 else ("partial" if passed_tc > 0 or attempt_detected else "failed")
+        
+        if score == total_marks and total_tc > 0:
             message = "All test cases passed."
-        elif total_tc > 0 and passed_tc > 0:
-            # Most cases pass -> 70%
-            # (Heuristic: linearly scale between 20 and 70, or just hardcoded bands as requested)
-            if passed_tc / total_tc >= 0.5:
-                score = 70
-                message = f"Passed {passed_tc}/{total_tc} test cases."
-            else:
-                score = 30 # Some passed
-                message = f"Passed {passed_tc}/{total_tc} test cases."
+        elif score > 0:
+            message = f"Passed {passed_tc}/{total_tc} test cases."
         elif not syntax_res["valid"]:
-            # Syntax error but logic detected
-            if similarity_score >= 50:
-                score = 60
-                message = "Logic is mostly correct but there is a syntax error."
-            elif similarity_score >= 30:
-                score = 40
-                message = "Some logical structure detected but contains syntax errors."
-            else:
-                score = 20
-                message = "Attempt detected but logic is incorrect and code has syntax errors."
+            message = "Syntax error detected."
         elif attempt_detected:
-            if similarity_score >= 40:
-                score = 40
-                message = "Logic partially matches but results are incorrect."
-            else:
-                score = 20
-                message = "Attempt detected but logic is significantly different from expected."
+            message = "Code logic attempt detected but test cases failed."
         else:
-            score = 0
-            message = "Empty or unrelated code."
+            message = "No test cases passed."
 
         return {
-            "status": "partial" if score < 100 and score > 0 else ("accepted" if score == 100 else "failed"),
+            "status": status,
+            "result": status.title(), # Compatibility
             "syntax_error": not syntax_res["valid"],
             "syntax_error_details": syntax_res if not syntax_res["valid"] else None,
             "logic_similarity": similarity_score,
