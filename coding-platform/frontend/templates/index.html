@@ -70,6 +70,13 @@
                     <input type="checkbox" id="reg-isprof">
                     <label for="reg-isprof" style="font-size: 14px;">I am a Professor</label>
                 </div>
+                <div class="form-group">
+                    <label class="form-label" id="subject-label">Select Subjects</label>
+                    <div id="subjects-container" style="display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <!-- Subjects will be loaded here -->
+                        <span style="color: var(--text-secondary); font-size: 13px;">Loading subjects...</span>
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 8px;">Create
                     Account</button>
             </form>
@@ -80,4 +87,96 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        // Fetch subjects for registration
+        try {
+            const res = await fetch(`${API_BASE}/subjects`);
+            if (res.ok) {
+                const subjects = await res.json();
+                const container = document.getElementById("subjects-container");
+                if (subjects.length === 0) {
+                    container.innerHTML = '<span style="color: var(--text-secondary); font-size: 13px;">No subjects available.</span>';
+                } else {
+                    container.innerHTML = subjects.map(s => `
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" class="subject-checkbox" value="${s.id}" id="subject-${s.id}">
+                            <label for="subject-${s.id}" style="font-size: 14px; cursor: pointer;">${s.subject_name}</label>
+                        </div>
+                    `).join("");
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load subjects", err);
+        }
+
+        const regForm = document.getElementById("register-form");
+        if (regForm) {
+            regForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const selectedSubjects = Array.from(document.querySelectorAll(".subject-checkbox:checked")).map(cb => parseInt(cb.value));
+                
+                const payload = {
+                    name: document.getElementById("reg-name").value,
+                    email: document.getElementById("reg-email").value,
+                    university_id: document.getElementById("reg-unid").value,
+                    password: document.getElementById("reg-pass").value,
+                    is_professor: document.getElementById("reg-isprof").checked,
+                    subject_ids: selectedSubjects
+                };
+
+                try {
+                    const res = await fetch(`${API_BASE}/auth/register`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (res.ok) {
+                        alert("Registration successful! Please login.");
+                        window.location.reload(); 
+                    } else {
+                        const data = await res.json();
+                        alert(`Error: ${data.detail || "Registration failed"}`);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Network error.");
+                }
+            });
+        }
+
+        const loginForm = document.getElementById("login-form");
+        if (loginForm) {
+            loginForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const email = document.getElementById("login-email").value;
+                const pass = document.getElementById("login-pass").value;
+
+                try {
+                    const formData = new URLSearchParams();
+                    formData.append("username", email);
+                    formData.append("password", pass);
+
+                    const res = await fetch(`${API_BASE}/auth/login`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        setToken(data.access_token);
+                        redirectBasedOnRole();
+                    } else {
+                        alert("Login failed. Check credentials.");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Network error.");
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

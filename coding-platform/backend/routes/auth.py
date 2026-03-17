@@ -30,6 +30,10 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
         password_hash=hashed_password,
         role="professor" if user.is_professor else "student"
     )
+
+    if user.subject_ids:
+        subjects = db.query(models.Subject).filter(models.Subject.id.in_(user.subject_ids)).all()
+        new_user.selected_subjects = subjects
     
     db.add(new_user)
     db.commit()

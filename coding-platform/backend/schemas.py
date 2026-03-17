@@ -9,6 +9,20 @@ class UserCreate(BaseModel):
     university_id: str
     password: str
     is_professor: bool = False
+    subject_ids: List[int] = []
+
+# --- Subject Schemas ---
+class SubjectBase(BaseModel):
+    subject_name: str
+
+class SubjectCreate(SubjectBase):
+    pass
+
+class SubjectResponse(SubjectBase):
+    id: int
+
+    class Config:
+        orm_mode = True
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -20,6 +34,7 @@ class UserResponse(BaseModel):
     email: str
     university_id: str
     role: str
+    selected_subjects: List[SubjectResponse] = []
 
     class Config:
         orm_mode = True
@@ -53,6 +68,7 @@ class ProblemCreate(BaseModel):
     difficulty: str
     reference_solution: Optional[str] = None
     total_marks: int = 100
+    subject_id: Optional[int] = None
     testcases: List[TestCaseCreate]
 
 class ProblemResponse(BaseModel):
@@ -64,6 +80,7 @@ class ProblemResponse(BaseModel):
     total_marks: int = 100
     created_by: int
     created_at: datetime
+    subject: Optional[SubjectResponse] = None
     testcases: List[TestCaseResponse] = []
 
     class Config:
@@ -73,6 +90,8 @@ class ProblemListResponse(BaseModel):
     id: int
     title: str
     difficulty: str
+    subject_id: Optional[int] = None
+    subject_name: Optional[str] = None
 
     class Config:
         orm_mode = True

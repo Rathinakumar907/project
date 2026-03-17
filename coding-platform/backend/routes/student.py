@@ -19,7 +19,13 @@ def get_all_problems(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    problems = db.query(models.Problem).all()
+    subject_ids = [s.id for s in current_user.selected_subjects]
+    problems = db.query(models.Problem).filter(models.Problem.subject_id.in_(subject_ids)).all()
+    
+    # Add subject_name manually to response objects for the schema
+    for p in problems:
+        p.subject_name = p.subject.subject_name if p.subject else "Unassigned"
+        
     return problems
 
 @router.get("/problems/{problem_id}", response_model=schemas.ProblemResponse)
@@ -31,6 +37,11 @@ def get_problem_details(
     problem = db.query(models.Problem).filter(models.Problem.id == problem_id).first()
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
+        
+    subject_ids = [s.id for s in current_user.selected_subjects]
+    if problem.subject_id not in subject_ids:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not enrolled in the subject for this problem")
+        
     return problem
 
 @router.get("/submissions", response_model=List[schemas.SubmissionResponse])

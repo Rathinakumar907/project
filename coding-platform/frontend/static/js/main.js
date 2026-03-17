@@ -15,84 +15,9 @@ function logout() {
     window.location.href = "/";
 }
 
-// Intercept form submissions for login and register
+// Intercept form submissions for login and register (handled in templates)
 document.addEventListener("DOMContentLoaded", () => {
     checkAuthState();
-
-    const loginForm = document.getElementById("login-form");
-    if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const email = document.getElementById("login-email").value;
-            const pass = document.getElementById("login-pass").value;
-
-            try {
-                const formData = new URLSearchParams();
-                formData.append("username", email);
-                formData.append("password", pass);
-
-                const res = await fetch(`${API_BASE}/auth/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: formData
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    setToken(data.access_token);
-                    redirectBasedOnRole();
-                } else {
-                    alert("Login failed. Check credentials.");
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Network error.");
-            }
-        });
-    }
-
-    const regForm = document.getElementById("register-form");
-    if (regForm) {
-        regForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const payload = {
-                name: document.getElementById("reg-name").value,
-                email: document.getElementById("reg-email").value,
-                university_id: document.getElementById("reg-unid").value,
-                password: document.getElementById("reg-pass").value,
-                is_professor: document.getElementById("reg-isprof").checked
-            };
-
-            try {
-                const res = await fetch(`${API_BASE}/auth/register`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    alert("Registration successful! Please login.");
-                    toggleAuthView(new Event('click'));
-                } else {
-                    const data = await res.json();
-                    let errMsg = 'Registration failed';
-                    if (data.detail) {
-                        if (typeof data.detail === 'string') {
-                            errMsg = data.detail;
-                        } else if (Array.isArray(data.detail)) {
-                            errMsg = data.detail.map(e => e.msg).join(", ");
-                        } else {
-                            errMsg = JSON.stringify(data.detail);
-                        }
-                    }
-                    alert(`Error: ${errMsg}`);
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Network error.");
-            }
-        });
-    }
 });
 
 function toggleAuthView(e) {

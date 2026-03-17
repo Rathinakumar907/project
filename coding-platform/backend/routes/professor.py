@@ -23,7 +23,8 @@ def create_problem(
         difficulty=problem.difficulty,
         reference_solution=problem.reference_solution,
         total_marks=problem.total_marks,
-        created_by=current_user.id
+        created_by=current_user.id,
+        subject_id=problem.subject_id
     )
     
     db.add(new_problem)
@@ -49,7 +50,8 @@ def get_professor_problems(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_professor)
 ):
-    problems = db.query(models.Problem).all()
+    subject_ids = [s.id for s in current_user.selected_subjects]
+    problems = db.query(models.Problem).filter(models.Problem.subject_id.in_(subject_ids)).all()
     return problems
 
 @router.get("/problems/{problem_id}", response_model=schemas.ProblemResponse)

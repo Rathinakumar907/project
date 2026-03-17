@@ -3,9 +3,17 @@
 {% block title %}Professor Dashboard{% endblock %}
 
 {% block content %}
-<div class="glass-panel" style="margin-bottom: 24px;">
-    <h2>Professor Control Panel</h2>
-    <p>Manage assignments, view student progress, and analyze plagiarism reports.</p>
+<div class="glass-panel" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <h2 id="welcome-greeting">Professor Control Panel</h2>
+        <p>Manage assignments, view student progress, and analyze plagiarism reports.</p>
+    </div>
+    <div id="teaching-subjects-panel" style="text-align: right;">
+        <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--text-secondary);">Teaching Subjects</h4>
+        <div id="teaching-subjects-list" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+            <!-- Populated via JS -->
+        </div>
+    </div>
 </div>
 
 <div class="grid-cards">
@@ -37,6 +45,12 @@
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
                     <option value="Hard">Hard</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-size: 13px;">Subject</label>
+                <select id="p-subject" class="form-control">
+                    <!-- Populated via JS -->
                 </select>
             </div>
 
@@ -196,6 +210,7 @@
         const diff = document.getElementById("p-diff").value;
         const ref = document.getElementById("p-ref").value;
         const maxMarks = parseInt(document.getElementById("p-max-marks").value) || 100;
+        const subjectId = parseInt(document.getElementById("p-subject").value);
 
         const tcRows = document.querySelectorAll(".testcase-row");
         const testcases = [];
@@ -217,6 +232,7 @@
             difficulty: diff,
             reference_solution: ref,
             total_marks: maxMarks,
+            subject_id: subjectId,
             testcases: testcases
         };
 
@@ -338,6 +354,35 @@
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
+        // Fetch subjects for dropdown and teaching list
+        let allSubjects = [];
+        try {
+            const sRes = await fetch(`${API_BASE}/subjects`);
+            if (sRes.ok) {
+                allSubjects = await sRes.json();
+                const dropdown = document.getElementById("p-subject");
+                dropdown.innerHTML = allSubjects.map(s => `<option value="${s.id}">${s.subject_name}</option>`).join("");
+            }
+        } catch (e) { console.error(e); }
+
+        // Fetch user profile for name and subjects
+        try {
+            const meRes = await authFetch(`${API_BASE}/auth/me`);
+            if (meRes.ok) {
+                const me = await meRes.json();
+                document.getElementById("welcome-greeting").textContent = `Hi, ${me.name}`;
+                
+                const subjectsList = document.getElementById("teaching-subjects-list");
+                if (me.selected_subjects && me.selected_subjects.length > 0) {
+                    subjectsList.innerHTML = me.selected_subjects.map(s => `
+                        <span class="badge" style="background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.2);">${s.subject_name}</span>
+                    `).join("");
+                } else {
+                    subjectsList.innerHTML = '<span style="color: var(--text-secondary); font-size: 12px;">No subjects selected</span>';
+                }
+            }
+        } catch (e) { console.error(e); }
+
         const res = await authFetch(`${API_BASE}/professor/problems`);
         if (res && res.ok) {
             const problems = await res.json();
@@ -346,23 +391,42 @@
             if (problems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4">No problems created yet.</td></tr>`;
             } else {
+                // Group problems by subject
+                const grouped = {};
                 problems.forEach(p => {
-                    let badgeClass = p.difficulty.toLowerCase() === 'easy' ? 'badge-easy' :
-                        p.difficulty.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
-
-                    tbody.innerHTML += `
-                    <tr>
-                        <td>#${p.id}</td>
-                        <td style="font-weight: 500;">${p.title}</td>
-                        <td><span class="badge ${badgeClass}">${p.difficulty}</span></td>
-                        <td>
-                            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--glass-border);" onclick="editProblem(${p.id})">Edit</button>
-                            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;" onclick="loadSubmissions(${p.id})">Submissions</button>
-                            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; background: var(--danger); border-color: var(--danger);" onclick="deleteProblem(${p.id})">Delete</button>
-                        </td>
-                    </tr>
-                `;
+                    const sName = p.subject ? p.subject.subject_name : "Unassigned";
+                    if (!grouped[sName]) grouped[sName] = [];
+                    grouped[sName].push(p);
                 });
+
+                tbody.innerHTML = "";
+                for (const [subject, probs] of Object.entries(grouped)) {
+                    // Add grouping header row
+                    tbody.innerHTML += `
+                        <tr style="background: rgba(99,102,241,0.05);">
+                            <td colspan="4" style="font-weight: bold; color: #818cf8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                📁 ${subject}
+                            </td>
+                        </tr>
+                    `;
+                    
+                    probs.forEach(p => {
+                        let badgeClass = p.difficulty.toLowerCase() === 'easy' ? 'badge-easy' :
+                            p.difficulty.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard';
+
+                        tbody.innerHTML += `
+                        <tr>
+                            <td>#${p.id}</td>
+                            <td style="font-weight: 500;">${p.title}</td>
+                            <td><span class="badge ${badgeClass}">${p.difficulty}</span></td>
+                            <td>
+                                <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; background: var(--glass-border);" onclick="editProblem(${p.id})">Edit</button>
+                                <button class="btn btn-primary" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;" onclick="loadSubmissions(${p.id})">Submissions</button>
+                                <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; background: var(--danger); border-color: var(--danger);" onclick="deleteProblem(${p.id})">Delete</button>
+                            </td>
+                        </tr>`;
+                    });
+                }
             }
         }
 

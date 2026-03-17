@@ -21,6 +21,7 @@ def migrate():
         ("problems", "total_marks", "ALTER TABLE problems ADD COLUMN total_marks INTEGER DEFAULT 100;"),
         ("submissions", "exam_session_id", "ALTER TABLE submissions ADD COLUMN exam_session_id INTEGER;"),
         ("testcases", "marks_weight", "ALTER TABLE testcases ADD COLUMN marks_weight INTEGER DEFAULT 1;"),
+        ("problems", "subject_id", "ALTER TABLE problems ADD COLUMN subject_id INTEGER;"),
     ]
 
     for table, column, sql in migrations:
@@ -81,6 +82,21 @@ def migrate():
                 status TEXT DEFAULT 'potential',
                 FOREIGN KEY(submission_1_id) REFERENCES submissions(id),
                 FOREIGN KEY(submission_2_id) REFERENCES submissions(id)
+            );
+        """,
+        "subjects": """
+            CREATE TABLE IF NOT EXISTS subjects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                subject_name TEXT UNIQUE
+            );
+        """,
+        "user_subjects": """
+            CREATE TABLE IF NOT EXISTS user_subjects (
+                user_id INTEGER,
+                subject_id INTEGER,
+                PRIMARY KEY (user_id, subject_id),
+                FOREIGN KEY(user_id) REFERENCES users(id),
+                FOREIGN KEY(subject_id) REFERENCES subjects(id)
             );
         """
     }

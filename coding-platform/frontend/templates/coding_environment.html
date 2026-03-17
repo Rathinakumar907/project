@@ -16,6 +16,7 @@
                 <h2 id="prob-title">Loading Problem...</h2>
                 <div style="display: flex; gap: 8px; margin-top: 8px;">
                     <span id="prob-diff" class="badge"></span>
+                    <span id="prob-subject" class="badge" style="background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.2); display: none;"></span>
                     <span class="badge" style="background: var(--glass-border);">Created on <span
                             id="prob-date"></span></span>
                 </div>
@@ -148,6 +149,12 @@
             badge.innerText = problem.difficulty;
             badge.className = "badge " + (problem.difficulty.toLowerCase() === 'easy' ? 'badge-easy' :
                 problem.difficulty.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-hard');
+                
+            if (problem.subject) {
+                const sBadge = document.getElementById("prob-subject");
+                sBadge.innerText = problem.subject.subject_name;
+                sBadge.style.display = "inline-block";
+            }
         } else {
             alert("Failed to load problem details.");
             window.location.href = "/student/dashboard";

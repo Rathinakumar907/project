@@ -1,7 +1,25 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Table
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
+
+# Association table for User <-> Subject (Many-to-Many)
+user_subjects = Table(
+    "user_subjects",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("subject_id", Integer, ForeignKey("subjects.id"), primary_key=True)
+)
+
+class Subject(Base):
+    __tablename__ = "subjects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    subject_name = Column(String, unique=True, index=True)
+
+    problems = relationship("Problem", back_populates="subject")
+    users = relationship("User", secondary=user_subjects, back_populates="selected_subjects")
+
 
 class User(Base):
     __tablename__ = "users"
@@ -16,6 +34,7 @@ class User(Base):
     submissions = relationship("Submission", back_populates="user")
     problems_created = relationship("Problem", back_populates="creator")
     exam_sessions = relationship("ExamSession", back_populates="user")
+    selected_subjects = relationship("Subject", secondary=user_subjects, back_populates="users")
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -27,9 +46,11 @@ class Problem(Base):
     reference_solution = Column(Text, nullable=True) # For partial marking
     total_marks = Column(Integer, default=100)        # Professor-defined total marks for this problem
     created_by = Column(Integer, ForeignKey("users.id"))
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True) # Each problem belongs to one subject
     created_at = Column(DateTime, default=datetime.utcnow)
 
     creator = relationship("User", back_populates="problems_created")
+    subject = relationship("Subject", back_populates="problems")
     testcases = relationship("TestCase", back_populates="problem", cascade="all, delete-orphan")
     submissions = relationship("Submission", back_populates="problem", cascade="all, delete-orphan")
 
