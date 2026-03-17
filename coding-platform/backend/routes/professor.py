@@ -49,7 +49,7 @@ def get_professor_problems(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_professor)
 ):
-    problems = db.query(models.Problem).filter(models.Problem.created_by == current_user.id).all()
+    problems = db.query(models.Problem).all()
     return problems
 
 @router.get("/problems/{problem_id}", response_model=schemas.ProblemResponse)

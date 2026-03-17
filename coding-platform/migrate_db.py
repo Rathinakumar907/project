@@ -18,8 +18,9 @@ def migrate():
         ("submissions", "status", "ALTER TABLE submissions ADD COLUMN status TEXT;"),
         ("submissions", "passed_testcases", "ALTER TABLE submissions ADD COLUMN passed_testcases INTEGER DEFAULT 0;"),
         ("submissions", "total_testcases", "ALTER TABLE submissions ADD COLUMN total_testcases INTEGER DEFAULT 0;"),
-        ("problems", "max_marks", "ALTER TABLE problems ADD COLUMN max_marks INTEGER DEFAULT 100;"),
+        ("problems", "total_marks", "ALTER TABLE problems ADD COLUMN total_marks INTEGER DEFAULT 100;"),
         ("submissions", "exam_session_id", "ALTER TABLE submissions ADD COLUMN exam_session_id INTEGER;"),
+        ("testcases", "marks_weight", "ALTER TABLE testcases ADD COLUMN marks_weight INTEGER DEFAULT 1;"),
     ]
 
     for table, column, sql in migrations:

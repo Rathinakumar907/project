@@ -1,0 +1,6 @@
+ProblemResponse Config orm_mode: True
+Found 2 problems
+Problem: python test 
+Serialized: {"id":3,"title":"python test ","description":"print any word","difficulty":"Easy","reference_solution":"data = input (\"\")\nprint(data)","total_marks":100,"created_by":1,"created_at":"2026-03-12T09:17:35.984443","testcases":[{"input_data":"hello","expected_output":"hello","marks_weight":1,"id":3,"problem_id":3}]}
+Problem: problem 2
+Serialized: {"id":4,"title":"problem 2","description":"find the type of input","difficulty":"Easy","reference_solution":"a = int(input(\"\"))\nprint(type(a))","total_marks":100,"created_by":1,"created_at":"2026-03-13T11:25:03.853254","testcases":[{"input_data":"1","expected_output":"int ","marks_weight":1,"id":4,"problem_id":4}]}
