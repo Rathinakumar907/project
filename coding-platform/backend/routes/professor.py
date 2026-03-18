@@ -50,8 +50,8 @@ def get_professor_problems(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(security.get_current_professor)
 ):
-    subject_ids = [s.id for s in current_user.selected_subjects]
-    problems = db.query(models.Problem).filter(models.Problem.subject_id.in_(subject_ids)).all()
+    # Removing subject_ids filter and returning problems created by this professor
+    problems = db.query(models.Problem).filter(models.Problem.created_by == current_user.id).all()
     return problems
 
 @router.get("/problems/{problem_id}", response_model=schemas.ProblemResponse)
