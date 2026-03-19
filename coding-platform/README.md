@@ -13,8 +13,8 @@ A full-stack university coding assessment platform with anti-cheating features.
 2. Run database setup and create tables.
 3. Pull docker images for code execution:
    `python docker/pull_images.py`
-4. Start the server:
-   `uvicorn backend.main:app --reload`
+4. Start the server (and automatically open browser):
+   `python main.py`
 
 ## Features
 - Student & Professor Roles
