@@ -21,18 +21,7 @@ def get_all_problems(
     current_user: models.User = Depends(security.get_current_user)
 ):
     subject_ids = [s.id for s in current_user.selected_subjects]
-<<<<<<< HEAD
-    # Allow access if problem belongs to an enrolled subject OR has no subject assigned
-    problems = db.query(models.Problem).filter(
-        (models.Problem.subject_id.in_(subject_ids)) | (models.Problem.subject_id == None)
-=======
-    problems = db.query(models.Problem).filter(
-        or_(
-            models.Problem.subject_id.in_(subject_ids),
-            models.Problem.subject_id == None
-        )
->>>>>>> 5a3eaa7ff733bb927e55fc635ec98a92abeb9a37
-    ).all()
+    problems = db.query(models.Problem).filter(models.Problem.subject_id.in_(subject_ids)).all()
     
     # Add subject_name manually to response objects for the schema
     for p in problems:
