@@ -11,7 +11,7 @@ from .. import models
 from typing import List, Dict, Any
 
 
-def get_all_student_marks(db: Session) -> Dict[str, Any]:
+def get_all_student_marks(db: Session, problem_ids: List[int] = None) -> Dict[str, Any]:
     """
     Returns:
     {
@@ -29,18 +29,21 @@ def get_all_student_marks(db: Session) -> Dict[str, Any]:
     }
     """
     # All problems (ordered)
-    all_problems = db.query(models.Problem).order_by(models.Problem.id).all()
+    query = db.query(models.Problem)
+    if problem_ids is not None:
+        query = query.filter(models.Problem.id.in_(problem_ids))
+    all_problems = query.order_by(models.Problem.id).all()
 
     # Best score per (user_id, problem_id)
-    best_per_pair = (
-        db.query(
-            models.Submission.user_id,
-            models.Submission.problem_id,
-            func.max(models.Submission.score).label("best_score"),
-        )
-        .group_by(models.Submission.user_id, models.Submission.problem_id)
-        .all()
+    query_scores = db.query(
+        models.Submission.user_id,
+        models.Submission.problem_id,
+        func.max(models.Submission.score).label("best_score"),
     )
+    if problem_ids is not None:
+        query_scores = query_scores.filter(models.Submission.problem_id.in_(problem_ids))
+    
+    best_per_pair = query_scores.group_by(models.Submission.user_id, models.Submission.problem_id).all()
 
     # Build lookup: {user_id: {problem_id: best_score}}
     score_map: Dict[int, Dict[int, int]] = {}

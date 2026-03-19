@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import List
 from .. import database, models, schemas, security, execution, anti_cheat
 from ..grading import submission_saver, student_dashboard as sd_helpers
@@ -20,7 +21,18 @@ def get_all_problems(
     current_user: models.User = Depends(security.get_current_user)
 ):
     subject_ids = [s.id for s in current_user.selected_subjects]
-    problems = db.query(models.Problem).filter(models.Problem.subject_id.in_(subject_ids)).all()
+<<<<<<< HEAD
+    # Allow access if problem belongs to an enrolled subject OR has no subject assigned
+    problems = db.query(models.Problem).filter(
+        (models.Problem.subject_id.in_(subject_ids)) | (models.Problem.subject_id == None)
+=======
+    problems = db.query(models.Problem).filter(
+        or_(
+            models.Problem.subject_id.in_(subject_ids),
+            models.Problem.subject_id == None
+        )
+>>>>>>> 5a3eaa7ff733bb927e55fc635ec98a92abeb9a37
+    ).all()
     
     # Add subject_name manually to response objects for the schema
     for p in problems:
@@ -39,7 +51,7 @@ def get_problem_details(
         raise HTTPException(status_code=404, detail="Problem not found")
         
     subject_ids = [s.id for s in current_user.selected_subjects]
-    if problem.subject_id not in subject_ids:
+    if problem.subject_id is not None and problem.subject_id not in subject_ids:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not enrolled in the subject for this problem")
         
     return problem
