@@ -52,3 +52,6 @@ def coding_environment(request: Request, problem_id: int):
 def professor_dashboard(request: Request):
     return templates.TemplateResponse("professor_dashboard.html", {"request": request})
 
+@app.get("/select-subjects", response_class=HTMLResponse)
+def select_subjects_page(request: Request):
+    return templates.TemplateResponse("select_subjects.html", {"request": request})

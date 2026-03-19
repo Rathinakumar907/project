@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Select Subjects - UniCode Platform{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="glass-panel auth-card">
+        <h2>Select Subjects</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 24px;">Please select at least one subject to continue to your dashboard.</p>
+
+        <form id="select-subjects-form">
+            <div class="form-group">
+                <label class="form-label" id="subject-label">Available Subjects</label>
+                <div id="subjects-container" style="display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <!-- Subjects will be loaded here -->
+                    <span style="color: var(--text-secondary); font-size: 13px;">Loading subjects...</span>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">Save Subjects</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        // Redirect to login if not authenticated
+        const token = getToken();
+        if (!token) {
+            window.location.href = "/";
+            return;
+        }
+
+        // Fetch user info to make sure they actually need this
+        try {
+            const userRes = await authFetch(`${API_BASE}/auth/me`);
+            if (userRes && userRes.ok) {
+                const user = await userRes.json();
+                if (user.selected_subjects && user.selected_subjects.length > 0) {
+                    // Already have subjects, auto-redirect
+                    if(user.role === 'professor') {
+                        window.location.href = "/professor/dashboard";
+                    } else {
+                        window.location.href = "/student/dashboard";
+                    }
+                    return;
+                }
+            }
+        } catch(e) { /* ignore error and continue to let them select */ }
+
+        // Fetch subjects
+        try {
+            const res = await fetch(`${API_BASE}/subjects`);
+            if (res.ok) {
+                const subjects = await res.json();
+                const container = document.getElementById("subjects-container");
+                if (subjects.length === 0) {
+                    container.innerHTML = '<span style="color: var(--text-secondary); font-size: 13px;">No subjects available. Please contact administrator.</span>';
+                } else {
+                    container.innerHTML = subjects.map(s => `
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" class="subject-checkbox" value="${s.id}" id="subject-${s.id}">
+                            <label for="subject-${s.id}" style="font-size: 14px; cursor: pointer;">${s.subject_name}</label>
+                        </div>
+                    `).join("");
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load subjects", err);
+        }
+
+        const form = document.getElementById("select-subjects-form");
+        if (form) {
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const selectedSubjects = Array.from(document.querySelectorAll(".subject-checkbox:checked")).map(cb => parseInt(cb.value));
+                
+                if (selectedSubjects.length === 0) {
+                    alert("Please select at least one subject.");
+                    return;
+                }
+                
+                try {
+                    const res = await authFetch(`${API_BASE}/subjects/assign`, {
+                        method: "POST",
+                        body: JSON.stringify(selectedSubjects)
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.role === "professor") {
+                            window.location.href = "/professor/dashboard";
+                        } else {
+                            window.location.href = "/student/dashboard";
+                        }
+                    } else {
+                        const errData = await res.json();
+                        alert(`Error saving subjects: ${errData.detail || 'Unknown error'}`);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Network error while saving subjects.");
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

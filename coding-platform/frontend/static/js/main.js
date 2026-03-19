@@ -43,10 +43,14 @@ async function redirectBasedOnRole() {
         });
         if (res.ok) {
             const user = await res.json();
-            if (user.role === "professor") {
-                window.location.href = "/professor/dashboard";
+            if (user.selected_subjects && user.selected_subjects.length > 0) {
+                if (user.role === "professor") {
+                    window.location.href = "/professor/dashboard";
+                } else {
+                    window.location.href = "/student/dashboard";
+                }
             } else {
-                window.location.href = "/student/dashboard";
+                window.location.href = "/select-subjects";
             }
         }
     } catch (err) {
