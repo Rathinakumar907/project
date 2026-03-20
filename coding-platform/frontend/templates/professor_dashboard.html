@@ -323,33 +323,41 @@
 
         panel.style.display = "block";
         title.innerText = `Submissions for Problem #${problemId}`;
-        list.innerHTML = "Loading...";
+        list.innerHTML = "<li>Loading...</li>";
 
-        const res = await authFetch(`${API_BASE}/professor/submissions/${problemId}`);
-        if (res && res.ok) {
-            const subs = await res.json();
-            list.innerHTML = "";
+        try {
+            const res = await authFetch(`${API_BASE}/professor/submissions/${problemId}`);
+            if (res && res.ok) {
+                const subs = await res.json();
+                list.innerHTML = "";
 
-            if (subs.length === 0) {
-                list.innerHTML = "<li>No submissions yet.</li>";
-                return;
+                if (subs.length === 0) {
+                    list.innerHTML = "<li>No submissions yet.</li>";
+                    return;
+                }
+
+                subs.forEach(s => {
+                    let color = s.result === 'Accepted' ? 'var(--success)' : 'var(--danger)';
+                    let simFlag = s.similarity_score > 80 ? `<span style="color:var(--danger); font-weight:bold">[Plagiarism Alert: ${s.similarity_score}%]</span>` : "";
+
+                    let displayName = s.user ? `${s.user.name} (${s.user.university_id})` : `User #${s.user_id}`;
+
+                    list.innerHTML += `
+                    <li style="padding: 12px; background: rgba(255,255,255,0.02); margin-bottom: 8px; border-radius: 4px; border-left: 3px solid ${color};">
+                        <div style="font-weight: 500;">${displayName} - <span style="color: ${color}">${s.result}</span></div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                            Lang: ${s.language} | Time: ${s.execution_time} ${simFlag}
+                        </div>
+                    </li>
+                `;
+                });
+            } else {
+                const err = await res.json().catch(() => ({}));
+                list.innerHTML = `<li style="color: var(--danger);">Failed to load submissions: ${err.detail || 'Access Denied or Server Error'}</li>`;
             }
-
-            subs.forEach(s => {
-                let color = s.result === 'Accepted' ? 'var(--success)' : 'var(--danger)';
-                let simFlag = s.similarity_score > 80 ? `<span style="color:var(--danger); font-weight:bold">[Plagiarism Alert: ${s.similarity_score}%]</span>` : "";
-
-                let displayName = s.user ? `${s.user.name} (${s.user.university_id})` : `User #${s.user_id}`;
-
-                list.innerHTML += `
-                <li style="padding: 12px; background: rgba(255,255,255,0.02); margin-bottom: 8px; border-radius: 4px; border-left: 3px solid ${color};">
-                    <div style="font-weight: 500;">${displayName} - <span style="color: ${color}">${s.result}</span></div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                        Lang: ${s.language} | Time: ${s.execution_time} ${simFlag}
-                    </div>
-                </li>
-            `;
-            });
+        } catch (e) {
+            console.error(e);
+            list.innerHTML = `<li style="color: var(--danger);">Network error while loading submissions.</li>`;
         }
     }
 
@@ -368,7 +376,7 @@
         // Fetch user profile for name and subjects
         try {
             const meRes = await authFetch(`${API_BASE}/auth/me`);
-            if (meRes.ok) {
+            if (meRes && meRes.ok) {
                 const me = await meRes.json();
                 document.getElementById("welcome-greeting").textContent = `Hi, ${me.name}`;
                 
