@@ -130,7 +130,9 @@ def get_problem_submissions(
     problem = db.query(models.Problem).filter(models.Problem.id == problem_id).first()
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
-    if problem.created_by != current_user.id:
+    # Allow if professor created it OR if it belongs to one of their teaching subjects
+    teaching_subject_ids = [s.id for s in current_user.selected_subjects]
+    if problem.created_by != current_user.id and problem.subject_id not in teaching_subject_ids:
         raise HTTPException(status_code=403, detail="Not authorized to view these submissions")
         
     submissions = db.query(models.Submission).filter(models.Submission.problem_id == problem_id).all()
