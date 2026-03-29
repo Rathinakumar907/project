@@ -3,6 +3,7 @@
 {% block title %}Professor Dashboard{% endblock %}
 
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <div class="glass-panel" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
     <div>
         <h2 id="welcome-greeting">Professor Control Panel</h2>
@@ -125,6 +126,48 @@
     </div>
     <div id="analytics-container" style="overflow-x:auto;">
         <p style="color:var(--text-secondary);">Loading analytics...</p>
+    </div>
+</div>
+
+<!-- Student Insights Section -->
+<div class="glass-panel" style="margin-top:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3>🧠 Student Insights</h3>
+    </div>
+    
+    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <select id="insight-student-select" class="form-control" style="width: 250px;" onchange="loadStudentInsights()">
+            <option value="">Select a Student...</option>
+        </select>
+        <button class="btn btn-secondary" onclick="loadStudentInsights()">Analyze</button>
+    </div>
+
+    <div id="student-insights-content" style="display: none;">
+        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+            <div class="glass-panel" style="flex:1;">
+                <h4>Total Solved</h4>
+                <div id="si-solved" style="font-size:24px; color:var(--success); font-weight:bold;">--</div>
+            </div>
+            <div class="glass-panel" style="flex:1;">
+                <h4>Accuracy</h4>
+                <div id="si-accuracy" style="font-size:24px; color:#6366f1; font-weight:bold;">--</div>
+            </div>
+            <div class="glass-panel" style="flex:1;">
+                <h4>Avg Time / Problem</h4>
+                <div id="si-time" style="font-size:24px; color:#f59e0b; font-weight:bold;">--</div>
+            </div>
+        </div>
+        
+        <div class="grid-cards">
+            <div class="glass-panel">
+                <h4 style="color: var(--danger);">Weak Areas</h4>
+                <ul id="si-weak-areas" style="margin-top: 10px;"></ul>
+            </div>
+            <div class="glass-panel" style="grid-column: span 1;">
+                <h4>Activity Graph</h4>
+                <canvas id="siChart" width="400" height="150" style="margin-top: 10px;"></canvas>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -489,6 +532,13 @@
             return;
         }
 
+        const studentDropdown = document.getElementById("insight-student-select");
+        if (studentDropdown && studentDropdown.options.length <= 1) {
+            data.students.forEach(st => {
+                studentDropdown.innerHTML += `<option value="${st.user_id}">${st.name} (${st.university_id})</option>`;
+            });
+        }
+
         // Build table header
         let headerCols = data.problems.map(p =>
             `<th title="Problem #${p.id}" style="min-width:100px; text-align:center; font-size:12px;">${p.title}<br><span style="color:var(--text-secondary);font-weight:normal;">#${p.id} · total&nbsp;${p.total_marks}</span></th>`
@@ -533,6 +583,53 @@
 
         tableHtml += `</tbody></table>`;
         container.innerHTML = tableHtml;
+    }
+
+    let siChartInst = null;
+    async function loadStudentInsights() {
+        const studentId = document.getElementById("insight-student-select").value;
+        const contentDiv = document.getElementById("student-insights-content");
+        if (!studentId) {
+            contentDiv.style.display = "none";
+            return;
+        }
+
+        try {
+            contentDiv.style.display = "block";
+            const pRes = await authFetch(`${API_BASE}/student-progress/${studentId}`);
+            if (pRes.ok) {
+                const stats = await pRes.json();
+                document.getElementById("si-solved").innerText = stats.total_problems_solved;
+                document.getElementById("si-accuracy").innerText = stats.accuracy_percentage + "%";
+                document.getElementById("si-time").innerText = stats.average_time_per_problem ? stats.average_time_per_problem + "s" : "--";
+                
+                const waList = document.getElementById("si-weak-areas");
+                if (stats.weak_areas.length > 0) {
+                    waList.innerHTML = stats.weak_areas.map(w => `<li>${w}</li>`).join("");
+                } else {
+                    waList.innerHTML = `<li style="color:var(--success);">No weak areas reported.</li>`;
+                }
+            }
+
+            const gRes = await authFetch(`${API_BASE}/student-progress-graph/${studentId}`);
+            if (gRes.ok) {
+                const gData = await gRes.json();
+                const ctx = document.getElementById("siChart").getContext("2d");
+                if (siChartInst) siChartInst.destroy();
+                siChartInst = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: gData.dates,
+                        datasets: [
+                            { label: 'Solved', data: gData.problems_solved, borderColor: '#10b981', tension: 0.1 },
+                            { label: 'Accuracy %', data: gData.accuracy, borderColor: '#6366f1', tension: 0.1 }
+                        ]
+                    }
+                });
+            }
+        } catch(e) {
+            console.error(e);
+        }
     }
 
     let debounceTimer;

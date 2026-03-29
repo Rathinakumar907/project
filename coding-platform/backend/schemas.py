@@ -219,3 +219,41 @@ class CheatingLogResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+# --- Student Progress Tracker Schemas ---
+class StudentProgressResponse(BaseModel):
+    id: int
+    user_id: int
+    problem_id: int
+    status: str
+    attempts_count: int
+    time_taken: Optional[int] = None
+    timestamp: datetime
+    problem_title: Optional[str] = None
+    subject_name: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+class StudentWeakAreasResponse(BaseModel):
+    id: int
+    user_id: int
+    topic: str
+    attempts: int
+    failures: int
+    success_rate: int
+
+    class Config:
+        orm_mode = True
+
+class StudentProgressGraphResponse(BaseModel):
+    dates: List[str]
+    problems_solved: List[int]
+    accuracy: List[int]
+
+class StudentProgressDashboardResponse(BaseModel):
+    user_id: int
+    total_problems_solved: int
+    accuracy_percentage: int
+    average_time_per_problem: Optional[int] = None
+    weak_areas: List[str]
