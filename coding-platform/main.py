@@ -8,14 +8,14 @@ import os
 def open_browser():
     """Opens the browser after a short delay to allow the server to start."""
     time.sleep(2)  # Wait for the server to initialize
-    print("\n[INFO] Automatically opening application in browser: http://localhost:8000")
-    webbrowser.open("http://localhost:8000")
+    print("\n[INFO] Automatically opening application in browser: http://localhost:8001")
+    webbrowser.open("http://localhost:8001")
 
 def start_server():
     """Starts the FastAPI server using uvicorn."""
     print("[INFO] Starting University Coding Platform...")
     try:
-        uvicorn.run("backend.main:app", host="0.0.0.0", port=8001, reload=True)
+        uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
     except Exception as e:
         print(f"[ERROR] Failed to start server: {e}")
         sys.exit(1)
