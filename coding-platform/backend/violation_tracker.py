@@ -19,6 +19,18 @@ class ViolationTracker:
         db.commit()
         db.refresh(new_violation)
         
+        session = db.query(models.ExamSession).filter(models.ExamSession.id == session_id).first()
+        if session:
+            # Also add to CheatingLog for Professor visibility
+            cheating_log = models.CheatingLog(
+                user_id=session.user_id,
+                problem_id=session.problem_id,
+                reason=f"Violation Detected: {event_type}",
+                timestamp=datetime.utcnow()
+            )
+            db.add(cheating_log)
+            db.commit()
+        
         # Count total violations for this session
         total_violations = db.query(models.Violation).filter(
             models.Violation.session_id == session_id
@@ -26,7 +38,6 @@ class ViolationTracker:
         
         # Mark session as 'terminated' if violations exceed threshold (e.g., 5)
         if total_violations >= 5:
-            session = db.query(models.ExamSession).filter(models.ExamSession.id == session_id).first()
             if session and session.status == "active":
                 session.status = "terminated"
                 db.commit()

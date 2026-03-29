@@ -26,13 +26,23 @@ class SecureSubmissionHandler:
         
         # 2. Run code inside sandbox (Evaluate)
         # Handles partial grading internally for Python if reference_code is present
-        result_data = evaluate_submission(
-            submission_data.code,
-            submission_data.language,
-            testcases,
-            total_marks=problem.total_marks,
-            reference_code=problem.reference_solution
-        )
+        if submission_data.cheat_detected:
+            result_data = {
+                "result": "Terminated",
+                "score": 0,
+                "passed_testcases": 0,
+                "total_testcases": len(testcases),
+                "execution_time": "0ms",
+                "error_details": "Test auto-submitted due to severe cheating violations (Max violations reached)."
+            }
+        else:
+            result_data = evaluate_submission(
+                submission_data.code,
+                submission_data.language,
+                testcases,
+                total_marks=problem.total_marks,
+                reference_code=problem.reference_solution
+            )
         
         # 3. Advanced Plagiarism Check
         # Check against other submissions for the same problem
@@ -92,8 +102,11 @@ class SecureSubmissionHandler:
         # --- CHEATING DETECTION HEURISTICS ---
         cheating_reason = None
         
+        if submission_data.cheat_detected:
+            cheating_reason = "Test auto-submitted due to suspicious activity (Max violations)"
+        
         # Heuristic 1: High Similarity
-        if sim_data["total_similarity"] > 80:
+        if not cheating_reason and sim_data["total_similarity"] > 80:
             cheating_reason = "High Similarity"
             
         # Heuristic 2: Hardcoded outputs (checking if large literal output is in code)

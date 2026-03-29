@@ -8,8 +8,8 @@ import os
 def open_browser():
     """Opens the browser after a short delay to allow the server to start."""
     time.sleep(2)  # Wait for the server to initialize
-    print("\n[INFO] Automatically opening application in browser: http://localhost:8001")
-    webbrowser.open("http://localhost:8001")
+    print("\n[INFO] Automatically opening application in browser: http://localhost:8000")
+    webbrowser.open("http://localhost:8000")
 
 def start_server():
     """Starts the FastAPI server using uvicorn."""

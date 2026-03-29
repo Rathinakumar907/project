@@ -52,6 +52,19 @@ window.initAntiCheat = function (sessionToken) {
         logViolation("Tab switch or loss of focus detected", true);
     });
 
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            logViolation("Tab switching is not allowed", true);
+        }
+    });
+
+    // Detect Fullscreen Exit
+    document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement) {
+            logViolation("Do not exit fullscreen during exam", true);
+        }
+    });
+
     async function logViolation(reason, showWarning) {
         if (violationCount >= 3) return;
 
@@ -113,8 +126,36 @@ window.initAntiCheat = function (sessionToken) {
         }
     }
 
-    // Track typing speed and activity
-    document.addEventListener("keydown", () => {
+    // Track typing speed, activity, and block shortcuts
+    document.addEventListener("keydown", (e) => {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const mainModifier = isMac ? e.metaKey : e.ctrlKey;
+        
+        let shouldBlock = false;
+        let blockedKey = "";
+
+        if (e.key === "F11") {
+            shouldBlock = true;
+            blockedKey = "F11";
+        } else if (e.key === "Escape") {
+            // Natural fullscreen exit handled by fullscreenchange, but log attempt
+        } else if (e.altKey && e.key === "Tab") {
+            shouldBlock = true;
+            blockedKey = "Alt+Tab";
+        } else if (mainModifier && (e.key.toLowerCase() === "c" || e.key.toLowerCase() === "v")) {
+            shouldBlock = true;
+            blockedKey = isMac ? "Cmd+C/V" : "Ctrl+C/V";
+        } else if (mainModifier && (e.key.toLowerCase() === "w" || e.key.toLowerCase() === "t")) {
+            shouldBlock = true;
+            blockedKey = isMac ? "Cmd+W/T" : "Ctrl+W/T";
+        }
+
+        if (shouldBlock) {
+            e.preventDefault();
+            e.stopPropagation();
+            logViolation(`Keyboard shortcut blocked (${blockedKey})`, true);
+        }
+
         charCount++;
         lastActive = Date.now();
     });
