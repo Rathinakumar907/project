@@ -1,0 +1,218 @@
+[
+  {
+    "id": 1,
+    "name": "rathin",
+    "email": "writingncommsaiu@gmail.com",
+    "university_id": "uni1234",
+    "password_hash": "$pbkdf2-sha256$29000$jFGKEUJoDcGYUwrB.D/nfA$ijNDCRasf/0cEjudPMcvVM2VQb90wX24w53FXWJfju8",
+    "role": "professor"
+  },
+  {
+    "id": 2,
+    "name": "vaibhav",
+    "email": "binary123@gmail.com",
+    "university_id": "univ1078",
+    "password_hash": "$pbkdf2-sha256$29000$LGVMKSWEMMZ4T0mpFYKQ8g$qRVLvd5hwKKuhZnMppTSgEazypZPWB3xrMHb198UGIc",
+    "role": "student"
+  },
+  {
+    "id": 3,
+    "name": "Test User",
+    "email": "test@example.com",
+    "university_id": "uid-123",
+    "password_hash": "$pbkdf2-sha256$29000$nlMq5bzX2huj9J4z5hwjpA$OjMdtp0MEoDwu1xtpgVQh1jSSD8OvdGoTnzCijQpES4",
+    "role": "student"
+  },
+  {
+    "id": 4,
+    "name": "Professor Test",
+    "email": "prof@test.com",
+    "university_id": "PROF-1",
+    "password_hash": "$pbkdf2-sha256$29000$09pbKyUkRMg5ByBEaI0RIg$JiirAfel13L09pM0ZmZZWrM/wDOtTy9Rt9l9nKKz4Vw",
+    "role": "professor"
+  },
+  {
+    "id": 5,
+    "name": "string",
+    "email": "user@example.com",
+    "university_id": "string",
+    "password_hash": "$pbkdf2-sha256$29000$P6eU0jqnlBJC6P2f0/qf8w$VxNqMJJrczTFXYmT48i3mcm7Z7yX1tNeyGSXq4SyFkc",
+    "role": "student"
+  },
+  {
+    "id": 6,
+    "name": "Prof Four",
+    "email": "prof4@test.com",
+    "university_id": "U004",
+    "password_hash": "$pbkdf2-sha256$29000$HANgDMH4v7eWMkZojbH2Hg$pxYMdGFWdwOeWBwwGVpd94LnstUeGjxiN4sLFU.Lw.Q",
+    "role": "professor"
+  },
+  {
+    "id": 7,
+    "name": "mourya",
+    "email": "mapla123@gmail.com",
+    "university_id": "UNI 1003",
+    "password_hash": "$pbkdf2-sha256$29000$jVFqjZFSCkGoFeJcK4XQeg$MNGmWNTakzmA.ExdI5eEP5K/hDq976GXZrk6XY62EpE",
+    "role": "student"
+  },
+  {
+    "id": 8,
+    "name": "Narbavee",
+    "email": "narbaveev@gmail.com",
+    "university_id": "UNI 1911",
+    "password_hash": "$pbkdf2-sha256$29000$FmIM4ZyTMkaIUQrBWOv9nw$frwL4E2ZNp9uHHBeJQrSuRsRP/b.plaMivVlSxKukRs",
+    "role": "student"
+  },
+  {
+    "id": 9,
+    "name": "Yoshithaa Sree",
+    "email": "yoshitha@gmail.com",
+    "university_id": "UNI 0994",
+    "password_hash": "$pbkdf2-sha256$29000$/r83BqCUUgqhtFZKyVlLCQ$pHRRVqEAPBj8lQ/QQzTj1Qlei/ztPKbfiowCSY90btU",
+    "role": "student"
+  },
+  {
+    "id": 10,
+    "name": "Student Test",
+    "email": "student@test.com",
+    "university_id": "STUD-123",
+    "password_hash": "$pbkdf2-sha256$29000$09ob47y3VqoVIkSI8X7vXQ$1eQvp8/pyYPWaRQ3BbEWS/M21SpumyOpdbrIMywnybY",
+    "role": "student"
+  },
+  {
+    "id": 11,
+    "name": "Student Tester",
+    "email": "student.tester@university.edu",
+    "university_id": "STU-12345",
+    "password_hash": "$pbkdf2-sha256$29000$27uX0novJaTUOicEAEDI.Q$3GHXHzyvtfhSDeTmr1Wup.mziVpir5iZvIr7Jf6aBpU",
+    "role": "student"
+  },
+  {
+    "id": 12,
+    "name": "TestIsolation",
+    "email": "iso@test.com",
+    "university_id": "ISO-001",
+    "password_hash": "$pbkdf2-sha256$29000$7P3//18rZQzBWCsFwJizNg$m.jd5PzJk45.1E3VeNhK7yq768KvRKpdQRP2oR4K2MU",
+    "role": "student"
+  },
+  {
+    "id": 13,
+    "name": "Professor X",
+    "email": "prof@university.edu",
+    "university_id": "PROF123",
+    "password_hash": "$pbkdf2-sha256$29000$OGdszVmrtdZaa20tBUDoXQ$YpVyCD8NL6gf5g08qMiOBfcALRFCaOYq5B4ngTLEqOQ",
+    "role": "professor"
+  },
+  {
+    "id": 14,
+    "name": "n",
+    "email": "professor@test.com",
+    "university_id": "u",
+    "password_hash": "$pbkdf2-sha256$29000$bk1pjVEqZaz1fu89p/Te2w$uXvo5UWDY9K/5WpLtM7hhO1gYL6KxItAN2JAsBkRaEs",
+    "role": "student"
+  },
+  {
+    "id": 15,
+    "name": "Professor",
+    "email": "professor@university.edu",
+    "university_id": "PROF-001",
+    "password_hash": "$pbkdf2-sha256$29000$1rr3PoewthYCoBRCSImxVg$2t1fV3mIIxzHxcSabsQrivGmC2Lp4Lt..muM0Qqc0X0",
+    "role": "professor"
+  },
+  {
+    "id": 16,
+    "name": "Test Prof",
+    "email": "testprof1773764120162@gmail.com",
+    "university_id": "PROF-1773764120162",
+    "password_hash": "$pbkdf2-sha256$29000$D4HQGmMsBUCoVYpxznmv9Q$NXjFc7cPQm.nyoufr6facsUk3kIYvg8RkUzvJlVOnFQ",
+    "role": "professor"
+  },
+  {
+    "id": 17,
+    "name": "Test Student",
+    "email": "student_test@university.edu",
+    "university_id": "STU-001",
+    "password_hash": "$pbkdf2-sha256$29000$X0tpLYUQAqA0xpgzhrC2Fg$.fetaYKKek8mOoxx/GRKgsdhjmJ6tVbAA2eDe415SJ8",
+    "role": "student"
+  },
+  {
+    "id": 18,
+    "name": "Test Student 2",
+    "email": "student_test2@university.edu",
+    "university_id": "STU-002",
+    "password_hash": "$pbkdf2-sha256$29000$29tbS0lJCUFICYEwBgDA.A$hSjosZVZUjR9P469RTctX4d2xIX3SEZxIiASqIOSt.s",
+    "role": "student"
+  },
+  {
+    "id": 19,
+    "name": "Test Student 3",
+    "email": "student_test3@university.edu",
+    "university_id": "STU-003",
+    "password_hash": "$pbkdf2-sha256$29000$v1cKYYyRUso5x/g/R6iV0g$FCMPcMx.daEYmUbIZUmcAwW42QN.agObunO7mHinjhk",
+    "role": "student"
+  },
+  {
+    "id": 20,
+    "name": "Prof. Smith",
+    "email": "smith2@university.edu",
+    "university_id": "PROF-002",
+    "password_hash": "$pbkdf2-sha256$29000$DYFQCkGI0XrPuVeqdW5NSQ$7J8ubig8RQFP9QzmtFBgGFWvcQ4F2ORopqviC4f0d2I",
+    "role": "professor"
+  },
+  {
+    "id": 21,
+    "name": "Verification Student",
+    "email": "v_student@uni.edu",
+    "university_id": "V-12345",
+    "password_hash": "$pbkdf2-sha256$29000$i9Ga8957b43ROsd4T2ntHQ$il3diSYsDeEBOYjrtpTNeRgTe53Z1RncHpZmx2NkC4o",
+    "role": "student"
+  },
+  {
+    "id": 22,
+    "name": "Verification Student",
+    "email": "v_student_v3@uni.edu",
+    "university_id": "V-123456",
+    "password_hash": "$pbkdf2-sha256$29000$N0aodS6FkBLi/N/7vxdizA$hqP9x8xXbwoxtQv5Zf.hEF8l1TLhj2qXj6fA8sB00P4",
+    "role": "student"
+  },
+  {
+    "id": 23,
+    "name": "Prof. Smith",
+    "email": "smith_v5@university.edu",
+    "university_id": "PROF-V5",
+    "password_hash": "$pbkdf2-sha256$29000$x5izdg5hrBViLIVQ6h2jtA$21lz0emDrbH.W4aH8QZBPUhyQ9xc3XTqbi0BK3s3jRY",
+    "role": "professor"
+  },
+  {
+    "id": 24,
+    "name": "Prof. Smith",
+    "email": "smith_final@university.edu",
+    "university_id": "PROF-FINAL",
+    "password_hash": "$pbkdf2-sha256$29000$ck4pZax1Tun9XwshhJASAg$iUTZhwhIWOcAghaHcW17bLt119lFrABVdvw4so00uos",
+    "role": "professor"
+  },
+  {
+    "id": 25,
+    "name": "New Prof",
+    "email": "newprof@test.com",
+    "university_id": "U555",
+    "password_hash": "$pbkdf2-sha256$29000$WivFeM95D2EsJaR0jnFOKQ$4mWtSp7.2kZXm7S1IGwyuA0/v0xcGaA8tlCyn40GwsU",
+    "role": "professor"
+  },
+  {
+    "id": 26,
+    "name": "Test Prof",
+    "email": "finaltest441a3co4jsg@test.com",
+    "university_id": "U123",
+    "password_hash": "$pbkdf2-sha256$29000$O6dU6t27dy7FmFNKaY0Rwg$pVE.doP0NmJaFVSm9PeNp9Ny4mVJKs24u/f45GrJ6Mk",
+    "role": "professor"
+  },
+  {
+    "id": 27,
+    "name": "Test Prof",
+    "email": "proftestmhaaxci9lw8@test.com",
+    "university_id": "U1",
+    "password_hash": "$pbkdf2-sha256$29000$3fvfG6N0bs0Zw9i7l5KSsg$B6CTe5j3LPGmdBpx4aFgGJL2Bgbb2zRXvjU9Z3fXPa0",
+    "role": "professor"
+  }
+]
