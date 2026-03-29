@@ -8,7 +8,23 @@
 {% endblock %}
 
 {% block content %}
-<div class="coding-layout">
+<!-- Exam Start Overlay -->
+<div id="exam-start-overlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
+    <div class="glass-panel" style="max-width: 500px; padding: 32px;">
+        <h2 style="margin-bottom: 16px;">Strict Exam Mode</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.6;">
+            This exam is proctored by UniCode Anti-Cheat services. Once started:
+            <br>&bull; You must remain in <strong>Fullscreen Mode</strong>.
+            <br>&bull; <strong>Tab switching</strong> or moving focus away is prohibited.
+            <br>&bull; <strong>Copy-paste</strong> and <strong>Right-click</strong> are disabled.
+            <br>&bull; 3 violations will result in an <strong>auto-submission</strong>.
+        </p>
+        <button id="start-exam-btn" class="btn btn-primary" style="font-size: 16px; padding: 12px 24px;" onclick="startTest()">Start Test In Fullscreen</button>
+        <div id="fs-error" style="color: var(--danger); margin-top: 16px; display: none;"></div>
+    </div>
+</div>
+
+<div class="coding-layout" id="main-coding-layout" style="display: none;">
     <!-- Problem Description -->
     <div class="problem-panel">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
@@ -117,7 +133,35 @@
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-        // ── Step 1: Initialize Exam Session ──────────────────────────────────
+        // Wait for user to click "Start Test"
+    });
+
+    async function startTest() {
+        const errorEl = document.getElementById("fs-error");
+        errorEl.style.display = "none";
+        errorEl.innerText = "";
+
+        // 1. Enter Fullscreen
+        const elem = document.documentElement;
+        try {
+            if (elem.requestFullscreen) {
+                await elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                await elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                await elem.msRequestFullscreen();
+            }
+        } catch (err) {
+            errorEl.innerText = "Error: This test requires fullscreen mode. Please grant permissions and try again. (" + err.message + ")";
+            errorEl.style.display = "block";
+            return;
+        }
+
+        // 2. Initialize Exam Session
+        const startBtn = document.getElementById("start-exam-btn");
+        startBtn.innerText = "Loading...";
+        startBtn.disabled = true;
+
         const sessionRes = await authFetch(`${API_BASE}/student/exam/start`, {
             method: "POST",
             body: JSON.stringify({ problem_id: parseInt(probId) })
@@ -155,11 +199,19 @@
                 sBadge.innerText = problem.subject.subject_name;
                 sBadge.style.display = "inline-block";
             }
+
+            // Reveal the editor
+            document.getElementById("exam-start-overlay").style.display = "none";
+            document.getElementById("main-coding-layout").style.display = "flex";
+            if (editor) {
+                editor.layout(); // Refresh monaco layout due to visibility change
+            }
+
         } else {
             alert("Failed to load problem details.");
             window.location.href = "/student/dashboard";
         }
-    });
+    }
 
     async function submitCode(isCheat = false) {
         if (!editor) return;

@@ -103,10 +103,23 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", async () => {
+        const urlPath = window.location.pathname;
+        let subjectFilter = null;
+        if (urlPath === "/student/python") subjectFilter = "Python";
+        else if (urlPath === "/student/dsa") subjectFilter = "Data Structures and Algorithms (DSA)";
+        else if (urlPath === "/student/lab") subjectFilter = "Python and DSA Lab";
+
+        let subjectMap = {};
+
         // ── Load available problems ──────────────────────────────────────────
         const problemsRes = await authFetch(`${API_BASE}/student/problems`);
         if (problemsRes && problemsRes.ok) {
-            const problems = await problemsRes.json();
+            let problems = await problemsRes.json();
+            problems.forEach(p => { subjectMap[p.id] = p.subject_name; });
+
+            if (subjectFilter) {
+                problems = problems.filter(p => p.subject_name === subjectFilter);
+            }
             const tbody = document.querySelector("#problems-table tbody");
 
             if (problems.length === 0) {
@@ -149,6 +162,11 @@
         if (profileRes && profileRes.ok) {
             const profile = await profileRes.json();
             const ptbody = document.querySelector("#progress-table tbody");
+
+            if (subjectFilter) {
+                profile.attempted_problems = profile.attempted_problems.filter(p => subjectMap[p.problem_id] === subjectFilter);
+                profile.total_marks = profile.attempted_problems.reduce((sum, p) => sum + p.best_score, 0);
+            }
 
             // Summary cards
             const cardsEl = document.getElementById("progress-cards");

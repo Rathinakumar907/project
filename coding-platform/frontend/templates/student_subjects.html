@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Select Subject - UniCode Platform{% endblock %}
+
+{% block content %}
+<div class="glass-panel" style="margin-bottom: 24px;">
+    <h2>Select a Subject</h2>
+    <p style="color: var(--text-secondary);">Choose a subject below to view its problems.</p>
+</div>
+
+<div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+    <a href="/student/python" style="text-decoration: none; color: inherit;">
+        <div class="glass-panel" style="text-align: center; padding: 40px 24px; transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="font-size: 48px; margin-bottom: 16px;">🐍</div>
+            <h3 style="margin-bottom: 8px;">Python</h3>
+            <p style="color: var(--text-secondary); font-size: 14px;">Master Python programming fundamentals.</p>
+        </div>
+    </a>
+    
+    <a href="/student/dsa" style="text-decoration: none; color: inherit;">
+        <div class="glass-panel" style="text-align: center; padding: 40px 24px; transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="font-size: 48px; margin-bottom: 16px;">🧩</div>
+            <h3 style="margin-bottom: 8px;">Data Structures and Algorithms (DSA)</h3>
+            <p style="color: var(--text-secondary); font-size: 14px;">Learn to solve complex problems efficiently.</p>
+        </div>
+    </a>
+
+    <a href="/student/lab" style="text-decoration: none; color: inherit;">
+        <div class="glass-panel" style="text-align: center; padding: 40px 24px; transition: transform 0.2s; cursor: pointer;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="font-size: 48px; margin-bottom: 16px;">💻</div>
+            <h3 style="margin-bottom: 8px;">Python and DSA Lab</h3>
+            <p style="color: var(--text-secondary); font-size: 14px;">Hands-on laboratory exercises and assignments.</p>
+        </div>
+    </a>
+</div>
+{% endblock %}
