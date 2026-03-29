@@ -47,7 +47,7 @@ async function redirectBasedOnRole() {
                 if (user.role === "professor") {
                     window.location.href = "/professor/dashboard";
                 } else {
-                    window.location.href = "/student/dashboard";
+                    window.location.href = "/student/subjects";
                 }
             } else {
                 window.location.href = "/select-subjects";
@@ -68,14 +68,14 @@ function checkAuthState() {
                 <a href="#" class="btn btn-primary" onclick="logout()" style="text-decoration: none; color: white;">Logout</a>
             `;
         }
-        // Auto redirect if on homepage
-        if (window.location.pathname === "/") {
+        // Auto redirect if on homepage or login
+        if (window.location.pathname === "/" || window.location.pathname === "/login") {
             redirectBasedOnRole();
         }
     } else {
         if (navActions) {
             navActions.innerHTML = `
-                <a href="/" style="color: var(--text-secondary);">Login</a>
+                <a href="/login" style="color: var(--text-secondary);">Login</a>
             `;
         }
     }
