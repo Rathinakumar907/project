@@ -139,3 +139,16 @@ class PlagiarismFlag(Base):
 
     submission_1 = relationship("Submission", foreign_keys=[submission_1_id])
     submission_2 = relationship("Submission", foreign_keys=[submission_2_id])
+
+class CheatingLog(Base):
+    __tablename__ = "cheating_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    problem_id = Column(Integer, ForeignKey("problems.id"))
+    reason = Column(String)
+    similarity_score = Column(Integer, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    problem = relationship("Problem")
