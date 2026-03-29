@@ -7,6 +7,9 @@
     <div>
         <h2 id="welcome-greeting">Professor Control Panel</h2>
         <p>Manage assignments, view student progress, and analyze plagiarism reports.</p>
+        <div id="cheating-alert-badge" style="display: none; margin-top: 8px; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; width: fit-content;">
+            ⚠ <span id="cheating-count">0</span> Suspicious Submissions Detected
+        </div>
     </div>
     <div id="teaching-subjects-panel" style="text-align: right;">
         <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--text-secondary);">Teaching Subjects</h4>
@@ -122,6 +125,28 @@
     </div>
     <div id="analytics-container" style="overflow-x:auto;">
         <p style="color:var(--text-secondary);">Loading analytics...</p>
+    </div>
+</div>
+
+<!-- Cheating Reports Section -->
+<div class="glass-panel" style="margin-top:24px; border: 1px solid rgba(239, 68, 68, 0.3);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="color: #ef4444;">🚨 Cheating Reports</h3>
+        <button class="btn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding:6px 14px; font-size:13px;" onclick="loadCheatingReports()">Refresh</button>
+    </div>
+    
+    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <select id="filter-subject" class="form-control" style="width: 200px;" onchange="loadCheatingReports()">
+            <option value="">All Subjects</option>
+        </select>
+        <select id="filter-problem" class="form-control" style="width: 200px;" onchange="loadCheatingReports()">
+            <option value="">All Problems</option>
+        </select>
+        <input type="text" id="filter-student" class="form-control" placeholder="Search Student ID..." style="width: 200px;" oninput="debounceLoadCheatingReports()">
+    </div>
+
+    <div id="cheating-reports-container" style="overflow-x:auto;">
+        <p style="color:var(--text-secondary);">Loading reports...</p>
     </div>
 </div>
 
@@ -370,6 +395,9 @@
                 allSubjects = await sRes.json();
                 const dropdown = document.getElementById("p-subject");
                 dropdown.innerHTML = allSubjects.map(s => `<option value="${s.id}">${s.subject_name}</option>`).join("");
+                
+                const filterSubject = document.getElementById("filter-subject");
+                filterSubject.innerHTML += allSubjects.map(s => `<option value="${s.id}">${s.subject_name}</option>`).join("");
             }
         } catch (e) { console.error(e); }
 
@@ -394,7 +422,10 @@
         const res = await authFetch(`${API_BASE}/professor/problems`);
         if (res && res.ok) {
             const problems = await res.json();
-            const tbody = document.querySelector("#prof-problems-table tbody");
+                const tbody = document.querySelector("#prof-problems-table tbody");
+                const filterProblem = document.getElementById("filter-problem");
+
+                filterProblem.innerHTML = `<option value="">All Problems</option>` + problems.map(p => `<option value="${p.id}">${p.title} (#${p.id})</option>`).join("");
 
             if (problems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4">No problems created yet.</td></tr>`;
@@ -503,5 +534,95 @@
         tableHtml += `</tbody></table>`;
         container.innerHTML = tableHtml;
     }
+
+    let debounceTimer;
+    function debounceLoadCheatingReports() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            loadCheatingReports();
+        }, 500);
+    }
+
+    async function loadCheatingReports() {
+        const container = document.getElementById("cheating-reports-container");
+        container.innerHTML = `<p style="color:var(--text-secondary);">Loading reports...</p>`;
+
+        const subjId = document.getElementById("filter-subject").value;
+        const probId = document.getElementById("filter-problem").value;
+        // The student filter is numeric mostly, but if we search by ID:
+        // Wait, the API supports student_id which is the DB integer ID, not university_id.
+        // If we want university_id, we'd need to change backend. But we can just use no filter here for now,
+        // or just let them search by user ID integer if they know it. For exact matches.
+        const studIdStr = document.getElementById("filter-student").value.trim();
+        const studId = studIdStr ? parseInt(studIdStr) : '';
+
+        let url = `${API_BASE}/professor/cheating-reports?`;
+        if (subjId) url += `subject_id=${subjId}&`;
+        if (probId) url += `problem_id=${probId}&`;
+        // Since we didn't implement university_id filter, we'll just not send it if not integer.
+        if (studId && !isNaN(studId)) url += `student_id=${studId}&`;
+
+        try {
+            const res = await authFetch(url);
+            if (!res || !res.ok) {
+                container.innerHTML = `<p style="color:var(--danger);">Failed to load cheating reports.</p>`;
+                return;
+            }
+            
+            const logs = await res.json();
+            
+            if (logs.length > 0) {
+                document.getElementById("cheating-alert-badge").style.display = "block";
+                document.getElementById("cheating-count").innerText = logs.length;
+            } else {
+                document.getElementById("cheating-alert-badge").style.display = "none";
+            }
+
+            if (logs.length === 0) {
+                container.innerHTML = `<p style="color:var(--text-secondary);">No cheating reports found based on the current filters.</p>`;
+                return;
+            }
+
+            let tableHtml = `
+            <table class="table" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student</th>
+                        <th>Problem</th>
+                        <th>Reason</th>
+                        <th>Similarity %</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+            logs.forEach(log => {
+                let dateStr = new Date(log.timestamp + "Z").toLocaleString();
+                let simDisplay = log.similarity_score ? `${log.similarity_score}%` : 'N/A';
+                
+                tableHtml += `
+                <tr>
+                    <td style="color:var(--text-secondary); font-size: 13px;">${dateStr}</td>
+                    <td style="font-weight: 500;">${log.student_name}</td>
+                    <td>${log.problem_name} (#${log.problem_id})</td>
+                    <td style="color: var(--danger); font-weight: bold;">${log.reason}</td>
+                    <td>${simDisplay}</td>
+                </tr>
+                `;
+            });
+            
+            tableHtml += `</tbody></table>`;
+            container.innerHTML = tableHtml;
+        } catch(e) {
+            console.error(e);
+            container.innerHTML = `<p style="color:var(--danger);">Network error while loading cheating reports.</p>`;
+        }
+    }
+
+    // Add this to DOMContentLoaded to auto-load after problems fetch
+    document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(loadCheatingReports, 1000);
+    });
 </script>
 {% endblock %}
