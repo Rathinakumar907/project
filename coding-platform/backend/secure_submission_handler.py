@@ -4,7 +4,7 @@ from .plagiarism_detector import PlagiarismDetector
 from .execution import evaluate_submission
 from .grading import submission_saver
 from datetime import datetime
-
+from .progress_tracker import ProgressTracker
 class SecureSubmissionHandler:
     @staticmethod
     def handle_submission(
@@ -128,6 +128,20 @@ class SecureSubmissionHandler:
             )
             db.add(cheating_log)
             db.commit()
+
+        # Update Progress Tracking
+        try:
+            time_taken = int((datetime.utcnow() - exam_session.start_time).total_seconds())
+            ProgressTracker.update_progress_on_submission(
+                db=db,
+                user_id=user.id,
+                problem_id=submission_data.problem_id,
+                subject_id=problem.subject_id,
+                status=result_data["result"],
+                time_taken_seconds=time_taken
+            )
+        except Exception as e:
+            print(f"Error updating progress tracking: {e}")
 
         return schemas.SubmissionResult(
             status=result_data["result"],

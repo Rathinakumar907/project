@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from . import models, database
-from .routes import auth, professor, student, subjects
+from .routes import auth, professor, student, subjects, progress
 import os
 
 models.Base.metadata.create_all(bind=database.engine)
@@ -23,6 +23,7 @@ app.include_router(auth.router)
 app.include_router(professor.router)
 app.include_router(student.router)
 app.include_router(subjects.router)
+app.include_router(progress.router)
 
 import os
 # Ensure frontend static directories exist for mounting

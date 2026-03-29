@@ -3,6 +3,7 @@
 {% block title %}Student Dashboard{% endblock %}
 
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <div class="glass-panel" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
     <div>
         <h2 id="welcome-greeting">Welcome to your Dashboard</h2>
@@ -52,6 +53,27 @@
                 <!-- Populated via JS -->
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Detailed Progress Analytics -->
+<div class="grid-cards" style="margin-top: 24px;">
+    <!-- Weak Areas -->
+    <div class="glass-panel">
+        <h3>Areas to Improve</h3>
+        <ul id="weak-areas-list" style="margin-top: 10px; color: var(--danger);">
+            <li>Loading...</li>
+        </ul>
+        <div style="margin-top: 15px;">
+            <p><strong>Accuracy:</strong> <span id="accuracy-stat">--</span>%</p>
+            <p><strong>Avg Time/Problem:</strong> <span id="avg-time-stat">--</span>s</p>
+        </div>
+    </div>
+
+    <!-- Progress Graph -->
+    <div class="glass-panel" style="grid-column: span 2;">
+        <h3>Progress Over Time</h3>
+        <canvas id="progressChart" width="400" height="150"></canvas>
     </div>
 </div>
 
@@ -194,6 +216,57 @@
                         <td><a href="/student/coding/${p.problem_id}" class="btn btn-primary" style="padding:4px 10px; font-size:12px;">Retry</a></td>
                     </tr>`;
                 });
+            }
+
+            // Load Detailed Progress Analytics
+            try {
+                const progressStatsRes = await authFetch(`${API_BASE}/student-progress/${profile.user_id}`);
+                const progressGraphRes = await authFetch(`${API_BASE}/student-progress-graph/${profile.user_id}`);
+
+                if (progressStatsRes.ok) {
+                    const stats = await progressStatsRes.json();
+                    document.getElementById('accuracy-stat').textContent = stats.accuracy_percentage;
+                    document.getElementById('avg-time-stat').textContent = stats.average_time_per_problem || '--';
+                    
+                    const waList = document.getElementById('weak-areas-list');
+                    if (stats.weak_areas.length > 0) {
+                        waList.innerHTML = stats.weak_areas.map(w => `<li>${w} - Needs Improvement</li>`).join('');
+                    } else {
+                        waList.innerHTML = `<li style="color: var(--success);">You have no weak areas!</li>`;
+                    }
+                }
+
+                if (progressGraphRes.ok) {
+                    const graphData = await progressGraphRes.json();
+                    const ctx = document.getElementById('progressChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: graphData.dates,
+                            datasets: [{
+                                label: 'Problems Solved',
+                                data: graphData.problems_solved,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                fill: true,
+                                tension: 0.1
+                            }, {
+                                label: 'Accuracy (%)',
+                                data: graphData.accuracy,
+                                borderColor: '#6366f1',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Error loading progress analytics", err);
             }
         }
     });
