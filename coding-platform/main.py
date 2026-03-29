@@ -15,7 +15,7 @@ def start_server():
     """Starts the FastAPI server using uvicorn."""
     print("[INFO] Starting University Coding Platform...")
     try:
-        uvicorn.run("backend.main:app", host="0.0.0.0", port=8001, reload=True)
+        uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
     except Exception as e:
         print(f"[ERROR] Failed to start server: {e}")
         sys.exit(1)
