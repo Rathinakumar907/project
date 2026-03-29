@@ -148,6 +148,7 @@ class StudentProfileResponse(BaseModel):
     university_id: str
     total_marks: int
     attempted_problems: List[ProblemProgressItem]
+    selected_subjects: List[SubjectResponse] = []
 
 
 # --- Professor Analytics ---
