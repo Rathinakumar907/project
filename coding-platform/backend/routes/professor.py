@@ -196,3 +196,40 @@ def get_analytics(
     problem_ids = [p.id for p in problems]
     
     return prof_helpers.get_all_student_marks(db, problem_ids)
+
+@router.get("/cheating-reports", response_model=List[schemas.CheatingLogResponse])
+def get_cheating_reports(
+    subject_id: int = None,
+    problem_id: int = None,
+    student_id: int = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(security.get_current_professor)
+):
+    query = db.query(models.CheatingLog).join(models.User).join(models.Problem)
+    
+    # Restrict to problems this professor created or teaches
+    prof_subject_ids = [s.id for s in current_user.selected_subjects]
+    query = query.filter(
+        (models.Problem.subject_id.in_(prof_subject_ids)) | 
+        (models.Problem.created_by == current_user.id)
+    )
+    
+    if subject_id:
+        query = query.filter(models.Problem.subject_id == subject_id)
+    if problem_id:
+        query = query.filter(models.Problem.id == problem_id)
+    if student_id:
+        query = query.filter(models.User.id == student_id)
+        
+    logs = query.order_by(models.CheatingLog.timestamp.desc()).all()
+    
+    response = []
+    for log in logs:
+        # Populate transient fields for schema
+        resp_obj = schemas.CheatingLogResponse.from_orm(log)
+        resp_obj.student_name = log.user.name
+        resp_obj.problem_name = log.problem.title
+        response.append(resp_obj)
+        
+    return response
+

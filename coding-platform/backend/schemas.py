@@ -205,3 +205,17 @@ class BehaviorLogCreate(BaseModel):
     paste_count: int = 0
     paste_size: int = 0
     idle_time: int = 0
+
+class CheatingLogResponse(BaseModel):
+    id: int
+    user_id: int
+    problem_id: int
+    reason: str
+    similarity_score: Optional[int] = None
+    timestamp: datetime
+    
+    student_name: Optional[str] = None
+    problem_name: Optional[str] = None
+
+    class Config:
+        orm_mode = True
