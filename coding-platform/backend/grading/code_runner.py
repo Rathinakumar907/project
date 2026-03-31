@@ -19,7 +19,10 @@ class CodeRunner:
             run_result = SandboxExecutor.run_code(code, input_data)
             
             actual_output = run_result["stdout"].strip()
-            is_passed = (actual_output == expected_output and run_result["exit_code"] == 0)
+            
+            from .utils import compare_output
+            
+            is_passed = (compare_output(expected_output, actual_output) and run_result["exit_code"] == 0)
             
             if is_passed:
                 passed_count += 1

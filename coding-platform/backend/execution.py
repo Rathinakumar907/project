@@ -158,6 +158,8 @@ def evaluate_submission(code: str, language: str, testcases: list, total_marks: 
     passed_weight = 0
     first_failure = None
     
+    from .grading.utils import compare_output
+    
     for idx, tc in enumerate(testcases):
         res = run_code_locally(code, language, tc.input_data)
         max_time = max(max_time, res["execution_time"])
@@ -165,18 +167,20 @@ def evaluate_submission(code: str, language: str, testcases: list, total_marks: 
         weight = getattr(tc, 'marks_weight', 1)
         
         if res["status"] == "Accepted":
-            actual_output = res["output"].strip().replace('\r\n', '\n')
-            expected_out = tc.expected_output.strip().replace('\r\n', '\n')
+            actual_output = res["output"]
+            expected_out = tc.expected_output
             
-            if actual_output == expected_out:
+            if compare_output(expected_out, actual_output):
                 passed_tc += 1
                 passed_weight += weight
             else:
                 if not first_failure:
+                    act_short = actual_output.strip()[:50].replace('\n', ' ')
+                    exp_short = expected_out.strip()[:50].replace('\n', ' ')
                     first_failure = {
                         "result": "Wrong Answer",
                         "failed_testcase": idx + 1,
-                        "error_details": f"Expected: {expected_out[:50]}... Got: {actual_output[:50]}..."
+                        "error_details": f"Expected: {exp_short}... Got: {act_short}..."
                     }
         else:
             if not first_failure:
@@ -186,10 +190,29 @@ def evaluate_submission(code: str, language: str, testcases: list, total_marks: 
                     "error_details": res["output"][:200]
                 }
                 
-    # Calculate score: (passed_weight / total_weight) * total_marks
-    score = int((passed_weight / total_weight) * total_marks)
+    # Strict Per-Question Grading Logic
+    ratio = (passed_weight / total_weight) if total_weight > 0 else 0
     
-    result_status = "Accepted" if passed_tc == total_tc else ( "Partially Correct" if passed_tc > 0 else (first_failure["result"] if first_failure else "Wrong Answer") )
+    if ratio == 1.0 and total_tc > 0:
+        score = total_marks
+        result_status = "Accepted"
+        error_details = ""
+    elif ratio >= 0.8:
+        score = int(total_marks * 0.80)
+        result_status = "Partially Correct"
+        error_details = "Logic is correct but code is incomplete."
+    elif ratio >= 0.5:
+        score = int(total_marks * 0.60)
+        result_status = "Partially Correct"
+        error_details = "Code or theoretical answer is partially correct."
+    elif ratio > 0:
+        score = int(total_marks * 0.40)
+        result_status = "Partially Correct"
+        error_details = "Answer is minimally correct."
+    else:
+        score = int(total_marks * 0.15)
+        result_status = "Wrong Answer"
+        error_details = "No valid logic is present."
 
     return {
         "result": result_status,
@@ -198,5 +221,5 @@ def evaluate_submission(code: str, language: str, testcases: list, total_marks: 
         "passed_testcases": passed_tc,
         "total_testcases": total_tc,
         "failed_testcase": first_failure["failed_testcase"] if first_failure else None,
-        "error_details": first_failure["error_details"] if first_failure else ""
+        "error_details": error_details + ("\n" + first_failure["error_details"] if first_failure else "")
     }

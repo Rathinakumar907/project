@@ -38,20 +38,20 @@ templates = Jinja2Templates(directory="frontend/templates")
 
 @app.get("/", response_class=HTMLResponse)
 def root_page(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html", context={"request": request})
 
 @app.get("/student/dashboard", response_class=HTMLResponse)
 def student_dashboard(request: Request):
-    return templates.TemplateResponse("student_dashboard.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="student_dashboard.html", context={"request": request})
 
 @app.get("/student/coding/{problem_id}", response_class=HTMLResponse)
 def coding_environment(request: Request, problem_id: int):
-    return templates.TemplateResponse("coding_environment.html", {"request": request, "problem_id": problem_id})
+    return templates.TemplateResponse(request=request, name="coding_environment.html", context={"request": request, "problem_id": problem_id})
 
 @app.get("/professor/dashboard", response_class=HTMLResponse)
 def professor_dashboard(request: Request):
-    return templates.TemplateResponse("professor_dashboard.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="professor_dashboard.html", context={"request": request})
 
 @app.get("/select-subjects", response_class=HTMLResponse)
 def select_subjects_page(request: Request):
-    return templates.TemplateResponse("select_subjects.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="select_subjects.html", context={"request": request})
