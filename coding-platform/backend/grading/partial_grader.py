@@ -32,21 +32,34 @@ class PartialGrader:
         total_weight = sum(tc.get("weight", 1) for tc in test_cases) or 1
         passed_weight = sum(test_cases[i].get("weight", 1) for i in passed_indices)
 
-        # Calculate score: (passed_weight / total_weight) * total_marks
-        score = int((passed_weight / total_weight) * total_marks) if total_tc > 0 else 0
+        # Strict Per-Question Grading Logic
+        ratio = (passed_weight / total_weight) if total_weight > 0 else 0
         
-        status = "accepted" if passed_tc == total_tc and total_tc > 0 else ("partial" if passed_tc > 0 or attempt_detected else "failed")
-        
-        if score == total_marks and total_tc > 0:
+        if ratio == 1.0 and total_tc > 0 and syntax_res["valid"]:
+            # 100% Correct
+            score = total_marks
+            status = "accepted"
             message = "All test cases passed."
-        elif score > 0:
-            message = f"Passed {passed_tc}/{total_tc} test cases."
-        elif not syntax_res["valid"]:
-            message = "Syntax error detected."
-        elif attempt_detected:
-            message = "Code logic attempt detected but test cases failed."
+        elif ratio >= 0.8 or (similarity_score >= 80 and not syntax_res["valid"]):
+            # 80%: Logic is correct but code is incomplete
+            score = int(total_marks * 0.80)
+            status = "partial"
+            message = "Logic is correct but code is incomplete."
+        elif ratio >= 0.5 or similarity_score >= 60:
+            # 60%: Partially correct
+            score = int(total_marks * 0.60)
+            status = "partial"
+            message = "Code or theoretical answer is partially correct."
+        elif ratio > 0 or attempt_detected or similarity_score >= 30:
+            # 40%: Minimally correct
+            score = int(total_marks * 0.40)
+            status = "partial"
+            message = "Answer is minimally correct."
         else:
-            message = "No test cases passed."
+            # 15%: Incorrect / No valid logic
+            score = int(total_marks * 0.15)
+            status = "failed"
+            message = "No valid logic is present."
 
         return {
             "status": status,

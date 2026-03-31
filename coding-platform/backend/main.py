@@ -39,6 +39,9 @@ templates = Jinja2Templates(directory="frontend/templates")
 
 @app.get("/", response_class=RedirectResponse)
 def root_page(request: Request):
+<<<<<<< HEAD
+    return templates.TemplateResponse(request=request, name="index.html", context={"request": request})
+=======
     return RedirectResponse(url="/login")
 
 @app.get("/login", response_class=HTMLResponse)
@@ -48,16 +51,20 @@ def login_page(request: Request):
 @app.get("/student/subjects", response_class=HTMLResponse)
 def student_subjects_page(request: Request):
     return templates.TemplateResponse(request=request, name="student_subjects.html", context={"request": request})
+>>>>>>> aa74a66596cc9d04f769d430af651f8acd3ae11c
 
 @app.get("/student/dashboard", response_class=HTMLResponse)
 def student_dashboard(request: Request):
     return templates.TemplateResponse(request=request, name="student_dashboard.html", context={"request": request})
+<<<<<<< HEAD
+=======
 
 @app.get("/student/{subject_slug}", response_class=HTMLResponse)
 def student_subject_problems(request: Request, subject_slug: str):
     if subject_slug not in ["python", "dsa", "lab"]:
         return RedirectResponse(url="/student/subjects")
     return templates.TemplateResponse(request=request, name="student_dashboard.html", context={"request": request, "subject_slug": subject_slug})
+>>>>>>> aa74a66596cc9d04f769d430af651f8acd3ae11c
 
 @app.get("/student/coding/{problem_id}", response_class=HTMLResponse)
 def coding_environment(request: Request, problem_id: int):
