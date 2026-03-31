@@ -1,0 +1,58 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment configurations
+.env
+.env.local
+
+# FastAPI / Starlette
+.vscode/
+.idea/
+
+# Database
+*.sqlite3
+*.db
+
+# Logs
+*.log
+error_log.txt
+test_results.txt
+users_output.txt
+
+# Temporary scripts/test files
+test_fastapi_templates.py
+print_jinja_args.py

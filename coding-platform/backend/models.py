@@ -139,3 +139,42 @@ class PlagiarismFlag(Base):
 
     submission_1 = relationship("Submission", foreign_keys=[submission_1_id])
     submission_2 = relationship("Submission", foreign_keys=[submission_2_id])
+
+class CheatingLog(Base):
+    __tablename__ = "cheating_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    problem_id = Column(Integer, ForeignKey("problems.id"))
+    reason = Column(String)
+    similarity_score = Column(Integer, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    problem = relationship("Problem")
+
+class StudentProgress(Base):
+    __tablename__ = "student_progress"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    problem_id = Column(Integer, ForeignKey("problems.id"))
+    status = Column(String) # Solved / Attempted / Failed
+    attempts_count = Column(Integer, default=1)
+    time_taken = Column(Integer) # in seconds
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    problem = relationship("Problem")
+
+class StudentWeakAreas(Base):
+    __tablename__ = "student_weak_areas"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    topic = Column(String)
+    attempts = Column(Integer, default=0)
+    failures = Column(Integer, default=0)
+    success_rate = Column(Integer, default=0) # Percentage
+
+    user = relationship("User")

@@ -15,9 +15,10 @@ def start_server():
     """Starts the FastAPI server using uvicorn."""
     print("[INFO] Starting University Coding Platform...")
     try:
-        uvicorn.run("backend.main:app", host="0.0.0.0", port=8001, reload=True)
+        uvicorn.run("backend.main:app", host="127.0.0.1", port=8001, reload=True)
     except Exception as e:
-        print(f"[ERROR] Failed to start server: {e}")
+        print(f"[ERROR] Failed to start server on port 8001: {e}")
+        print("[TIP] Ensure no other process is using port 8001. Use 'netstat -ano | findstr :8001' to check.")
         sys.exit(1)
 
 if __name__ == "__main__":
