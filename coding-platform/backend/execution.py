@@ -202,16 +202,7 @@ def evaluate_submission(code: str, language: str, testcases: list, total_marks: 
     sample_tcs = [tc for tc in testcases if getattr(tc, 'marks_weight', 1) == 0]
     hidden_tcs = [tc for tc in testcases if getattr(tc, 'marks_weight', 1) > 0]
     
-<<<<<<< HEAD
     from .grading.utils import compare_output
-    
-    for idx, tc in enumerate(testcases):
-        res = run_code_locally(code, language, tc.input_data)
-=======
-    # If all have weight > 0, treat the first one as sample for visual feedback
-    if not sample_tcs and testcases:
-        sample_tcs = [testcases[0]]
-        hidden_tcs = testcases[1:]
 
     passed_hidden = 0
     total_hidden_weight = sum(tc.marks_weight for tc in hidden_tcs) or 1
@@ -219,81 +210,30 @@ def evaluate_submission(code: str, language: str, testcases: list, total_marks: 
     
     max_time = 0
     first_failure = None
+    samples_passed = 0
+    error_details = ""
 
     # Step 1: Run Sample Test Cases (Feedback allowed)
-    samples_passed = 0
     for idx, tc in enumerate(sample_tcs):
         res = run_code_in_sandbox(code, language, tc.input_data)
->>>>>>> aa74a66596cc9d04f769d430af651f8acd3ae11c
         max_time = max(max_time, res["execution_time"])
         
-        actual = res["output"].strip().replace('\r\n', '\n')
-        expected = tc.expected_output.strip().replace('\r\n', '\n')
-        
-<<<<<<< HEAD
-        if res["status"] == "Accepted":
-            actual_output = res["output"]
-            expected_out = tc.expected_output
-            
-            if compare_output(expected_out, actual_output):
-                passed_tc += 1
-                passed_weight += weight
-            else:
-                if not first_failure:
-                    act_short = actual_output.strip()[:50].replace('\n', ' ')
-                    exp_short = expected_out.strip()[:50].replace('\n', ' ')
-                    first_failure = {
-                        "result": "Wrong Answer",
-                        "failed_testcase": idx + 1,
-                        "error_details": f"Expected: {exp_short}... Got: {act_short}..."
-                    }
-=======
-        if res["status"] == "Accepted" and actual == expected:
+        if res["status"] == "Accepted" and compare_output(tc.expected_output, res["output"]):
             samples_passed += 1
->>>>>>> aa74a66596cc9d04f769d430af651f8acd3ae11c
         else:
             if not first_failure:
                 first_failure = {
                     "result": res["status"] if res["status"] != "Accepted" else "Wrong Answer",
                     "failed_testcase": idx + 1,
-                    "error_details": f"Sample Failed. Expected: {expected[:100]} Got: {actual[:100]}"
+                    "error_details": f"Sample Failed. Expected: {tc.expected_output[:100]} Got: {res['output'][:100]}"
                 }
-<<<<<<< HEAD
-                
-    # Strict Per-Question Grading Logic
-    ratio = (passed_weight / total_weight) if total_weight > 0 else 0
-    
-    if ratio == 1.0 and total_tc > 0:
-        score = total_marks
-        result_status = "Accepted"
-        error_details = ""
-    elif ratio >= 0.8:
-        score = int(total_marks * 0.80)
-        result_status = "Partially Correct"
-        error_details = "Logic is correct but code is incomplete."
-    elif ratio >= 0.5:
-        score = int(total_marks * 0.60)
-        result_status = "Partially Correct"
-        error_details = "Code or theoretical answer is partially correct."
-    elif ratio > 0:
-        score = int(total_marks * 0.40)
-        result_status = "Partially Correct"
-        error_details = "Answer is minimally correct."
-    else:
-        score = int(total_marks * 0.15)
-        result_status = "Wrong Answer"
-        error_details = "No valid logic is present."
-=======
 
     # Step 2: Run Hidden Test Cases (Feedback restricted)
     for idx, tc in enumerate(hidden_tcs):
         res = run_code_in_sandbox(code, language, tc.input_data)
         max_time = max(max_time, res["execution_time"])
         
-        actual = res["output"].strip().replace('\r\n', '\n')
-        expected = tc.expected_output.strip().replace('\r\n', '\n')
-        
-        if res["status"] == "Accepted" and actual == expected:
+        if res["status"] == "Accepted" and compare_output(tc.expected_output, res["output"]):
             passed_hidden += 1
             passed_hidden_weight += tc.marks_weight
         else:
@@ -305,8 +245,8 @@ def evaluate_submission(code: str, language: str, testcases: list, total_marks: 
                     "error_details": "Hidden test case failed. All inputs and outputs are hidden for security."
                 }
 
-    # Final Score based ONLY on hidden test cases
-    score = int((passed_hidden_weight / total_hidden_weight) * total_marks)
+    # Final Score based ONLY on hidden test cases (or all if specified, but sticking to weight)
+    score = int((passed_hidden_weight / total_hidden_weight) * total_marks) if total_hidden_weight > 0 else 0
     
     # Overall Status
     total_passed = samples_passed + passed_hidden
@@ -316,7 +256,6 @@ def evaluate_submission(code: str, language: str, testcases: list, total_marks: 
         result_status = "Partially Correct"
     else:
         result_status = first_failure["result"] if first_failure else "Wrong Answer"
->>>>>>> aa74a66596cc9d04f769d430af651f8acd3ae11c
 
     return {
         "result": result_status,
